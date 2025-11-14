@@ -18,9 +18,9 @@ export const metadata: Metadata = {
   title: "SavesJVN",
   description: "SavesJVN is a decentralized savings platform",
   icons: {
-    icon: "/logo.jpg",
-    shortcut: "/logo.jpg",
-    apple: "/logo.jpg",
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

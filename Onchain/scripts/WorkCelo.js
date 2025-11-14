@@ -2,8 +2,8 @@ const hre = require("hardhat");
 const { ethers, getNamedAccounts, network, deployments } = hre;
 
 // Direcciones de cCOP
-const CELO_MAINNET_CCOP = "0x434563B0604BE100F04B7Ae485BcafE3c9D8850E";
-const CELO_SEPOLIA_CCOP = "0xEd9A3541f06E45E3d92E937AA74eD878127318E0";
+const CELO_MAINNET_CCOP = "0x8A567e2aE79CA692Bd748aB832081C45de4041eA";
+const CELO_SEPOLIA_CCOP = "0x5F8d55c3627d2dc0a2B4afa798f877242F382F67";
 
 const SIX_MONTHS_SECONDS = 180 * 24 * 60 * 60;
 const DEFAULT_DEPOSIT = "1"; // 1 cCOP (asumiendo 18 decimales)

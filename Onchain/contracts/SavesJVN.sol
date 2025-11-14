@@ -239,6 +239,7 @@ contract SavesJVN {
     function depositNative(uint256 fundId) external payable {
         Fund storage f = funds[fundId];
         if (f.owner == address(0)) revert FundNotFound();
+        if(token != address(0)) revert NativeRequired();
         if (!f.active) revert FundNotActive();
         if (msg.value == 0) revert AmountExceedsAvailable();
 

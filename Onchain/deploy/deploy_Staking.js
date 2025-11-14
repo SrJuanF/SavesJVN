@@ -1,5 +1,17 @@
 const { ethers, network } = require("hardhat");
 
+/*
+git add . && \
+rm -rf Ahorro-JVN/.git && \
+git rm --cached -rf Ahorro-JVN && \
+rm -rf Onchain/.git && \
+git rm --cached -rf Onchain && \
+git add Ahorro-JVN && \
+git add Onchain 
+git commit -m "proxys-fit deploy"
+git push -u origin main
+*/
+
 // Despliega Staking.sol y le envía 11 SBY (en Shibuya) como balance inicial
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy, log } = deployments;

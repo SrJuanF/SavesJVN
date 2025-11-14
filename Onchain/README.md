@@ -1,9 +1,9 @@
 # AhorroJGM Onchain (Hardhat)
 
 ## Direcciones de contratos desplegados
-- Celo mainnet (42220): `0x660cBF691952278bc54265Dfa0E8f1595A4473Ca`
-- Celo Sepolia (11142220): `0x054237FC55A63d4a18fF5Bfb4d0778d73097fbAc`
-- Shibuya testnet (Astar, 81): `0x931c27184b08E469Ba7BC6bC0e540E06e41A456E`
+- Celo mainnet (42220): `0x69E974fD8FE0016CCDB059f6e1De302Ff690A3A5`
+- Celo Sepolia (11142220): `0x250438285600A93d6224B95Ae39f32df63f11059`
+- Shibuya testnet (Astar, 81): `0x54E1C268D37751Ea0a65b9E58dC3430CA8676575`
 - Astar mainnet (592): no registrado en este repositorio aún
 
 ## Propósito

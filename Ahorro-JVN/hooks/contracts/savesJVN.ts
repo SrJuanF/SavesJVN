@@ -2,6 +2,7 @@ import abi from './abi.json';
 import { useReadContract, useWriteContract } from 'wagmi';
 import type { Address, Hex } from 'viem';
 
+
 // Enum de tipos de fondo (según contrato)
 // Interfaces: mantener solo los mínimos necesarios
 export interface CreateFundParams {
@@ -118,3 +119,39 @@ export const useSavesJVNWrites = (address: Address) => {
     },
   };
 };
+
+export const useERC20Writes = (tokenAddress: Address) => {
+  const { writeContractAsync } = useWriteContract();
+  return {
+    approve: async (spender: Address, amount: bigint): Promise<Hex> => {
+      return writeContractAsync({ address: tokenAddress, abi: ERC20_ABI as any, functionName: 'approve', args: [spender, amount] });
+    },
+  };
+};
+export const useERC20Allowance = (tokenAddress: Address, owner: Address, spender: Address, enabled: boolean = true) => {
+  return useReadContract({ address: tokenAddress, abi: ERC20_ABI as any, functionName: 'allowance', args: [owner, spender], query: { enabled } }) as {
+    data: bigint | undefined;
+  } & ReturnType<typeof useReadContract>;
+};
+export const ERC20_ABI = [
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'value', type: 'uint256' },
+    ],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'allowance',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ type: 'uint256' }],
+  },
+] as const;

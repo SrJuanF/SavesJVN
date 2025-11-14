@@ -3,8 +3,13 @@
 import contracts from "../contracts/contracts.json";
 import { useAuth } from "@/hooks";
 import { useEffect, useMemo, useState } from "react";
-import { useNextFundId, usePenaltyDuration, useTokenAddress, useUserFunds, useSavesJVNWrites, useReadFund } from "../contracts/savesJVN";
+import { useBalance, usePublicClient } from "wagmi";
+import { useNextFundId, usePenaltyDuration, useTokenAddress, useUserFunds, useSavesJVNWrites, useReadFund, useERC20Writes, useERC20Allowance, ERC20_ABI } from "../contracts/savesJVN";
 import type { Address } from "viem";
+
+// cCOP token addresses
+const CELO_MAINNET_CCOP = "0x8A567e2aE79CA692Bd748aB832081C45de4041eA";
+const CELO_SEPOLIA_CCOP = "0x5F8d55c3627d2dc0a2B4afa798f877242F382F67";
 
 // Acceso simple al address por chainId sin validaciones
 type ContractsByChain = Record<number, { address: Address }>;
@@ -106,6 +111,30 @@ export function useSaves(){
 
     // Hook de escritura del contrato
     const writes = useSavesJVNWrites(contractAddr);
+    const ccopAddr: Address = ((chainId === 42220 ? CELO_MAINNET_CCOP : chainId === 11142220 ? CELO_SEPOLIA_CCOP : ZERO_ADDRESS) as Address);
+    const erc20Writes = useERC20Writes(ccopAddr);
+    const isCeloNet = chainId === 42220 || chainId === 11142220;
+    const isShibuya = chainId === 81;
+    const currencySymbol = isCeloNet ? "cCOP" : isShibuya ? "SBY" : "ASTR";
+    const allowanceQuery = useERC20Allowance(ccopAddr, userAddr, contractAddr, isCeloNet && isValidAddress(ccopAddr) && userEnabled && contractEnabled);
+
+    const { data: walletBalance } = useBalance({ address: userAddr as `0x${string}`, query: { enabled: userEnabled } });
+    const { data: walletTokenBalance } = useBalance({ address: userAddr as `0x${string}`, token: ccopAddr as any, query: { enabled: userEnabled && isCeloNet && isValidAddress(ccopAddr) } });
+    const walletFormatted5 = useMemo(() => {
+      if (!walletBalance) return null;
+      const s = walletBalance.formatted;
+      const [intPart, decPart = ""] = s.split(".");
+      const d = decPart.slice(0, 5);
+      return d ? `${intPart}.${d}` : intPart;
+    }, [walletBalance]);
+    const walletTokenFormatted5 = useMemo(() => {
+      if (!walletTokenBalance) return null;
+      const s = walletTokenBalance.formatted;
+      const [intPart, decPart = ""] = s.split(".");
+      const d = decPart.slice(0, 5);
+      return d ? `${intPart}.${d}` : intPart;
+    }, [walletTokenBalance]);
+    const walletDisplayStr = isCeloNet ? walletTokenFormatted5 : walletFormatted5;
 
     // Wrappers de escritura con validaciones del core
     const createFund = async (params: { fundType: number; durationSeconds: bigint | number; privilegedWallets: string[]; beneficiaryWallets: string[]; }) => {
@@ -151,9 +180,25 @@ export function useSaves(){
       return writes.setDappTarget(toBigInt(fundId), dapp);
     };
 
+    const publicClient = usePublicClient();
+    const approveCCOP = async (amount: bigint | number) => {
+      if (!contractEnabled) throw new Error("Contrato no disponible o inválido en el chain actual");
+      if (!isValidAddress(ccopAddr)) throw new Error("Token no disponible en la red actual");
+      const needed = toBigInt(amount);
+      const current = allowanceQuery?.data ?? 0n;
+      if (current >= needed) return;
+      const hash = await erc20Writes.approve(contractAddr, needed);
+      if (hash && publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
+      return hash;
+    };
+
     return {
       chainId,
       addressContract,
+      currencySymbol,
+      walletDisplayStr,
       // Lecturas (datos y estado)
       nextFundId: nextFundIdReady ? (nextFundIdQuery?.data as bigint) : undefined,
       penaltyDuration: penaltyDurationReady ? (penaltyDurationQuery?.data as bigint) : undefined,
@@ -171,6 +216,7 @@ export function useSaves(){
       endStake,
       withdrawToBeneficiary,
       setDappTarget,
+      approveCCOP,
     };
 }
 

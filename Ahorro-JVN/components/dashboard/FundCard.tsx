@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { utils as ethersUtils } from "ethers";
 import type { FundStruct } from "@/hooks/contracts/savesJVN";
 import { useSaves, ZERO_ADDRESS } from "@/hooks/core/use-saves";
+import { useAuth } from "@/hooks";
 
 type FundCardProps = {
   fundId: bigint;
@@ -13,16 +14,17 @@ type FundCardProps = {
 };
 
 export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCardProps) => {
-  const { depositNative, depositToken, stakeASTR, withdrawToBeneficiary, tokenAddress } = useSaves();
+  const { depositNative, depositToken, stakeASTR, withdrawToBeneficiary, tokenAddress, approveCCOP } = useSaves();
   const [amount, setAmount] = useState<string>("");
-  const [currency, setCurrency] = useState<string>("ASTR");
   const [loading, setLoading] = useState<"deposit" | "stake" | "withdraw" | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const canWithdraw = Number(detail.endTime) * 1000 <= Date.now();
   const checkoutUrl = "https://app.monabit.io/checkout?collection_id=CHt32TEa5B0OOQyXKQ7k54";
-  const isCelo = Boolean(tokenAddress && tokenAddress !== ZERO_ADDRESS);
-  const nativeLabel = isCelo ? "CELO" : "ASTR";
+  const { chainId } = useAuth();
+  const isCeloNet = chainId === 42220 || chainId === 11142220;
+  const isShibuya = chainId === 81;
+  const currencySymbol = isCeloNet ? "cCOP" : isShibuya ? "SBY" : "ASTR";
   const beneficiariesList = (Array.isArray(detail.beneficiaries) ? detail.beneficiaries : []).filter((a) => String(a) !== ZERO_ADDRESS);
   const withdrawOptions = (collaborators && collaborators.length > 0 ? collaborators : beneficiariesList.map((a) => String(a)));
   const [withdrawToAddr, setWithdrawToAddr] = useState<string | null>(withdrawOptions[0] ? String(withdrawOptions[0]) : null);
@@ -41,8 +43,11 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
     setLoading("deposit");
     try {
       const v = BigInt(ethersUtils.parseUnits((amount || "0").replace(/,/g, "."), 18).toString());
-      if (currency === nativeLabel) await depositNative(fundId, v);
-      else await depositToken(fundId, v);
+      if (isCeloNet) {
+        await approveCCOP(v);
+        await depositToken(fundId, v);
+      }
+      else await depositNative(fundId, v);
       setAmount("");
       refresh?.();
     } finally {
@@ -114,6 +119,7 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
           <div className="rounded-xl border border-white/10 bg-black/20 p-3">
             <p className="text-white/70">Saldo</p>
             <p className="text-lg font-bold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">{balanceDisplay}</p>
+            <span className="text-xs text-white/70">{currencySymbol}</span>
           </div>
           <div className="rounded-xl border border-white/10 bg-black/20 p-3">
             <p className="text-white/70">Stake</p>
@@ -137,7 +143,7 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
                 <button className="rounded-md px-2 py-1 text-sm border border-white/20 hover:bg-white/10" onClick={() => setShowModal(false)}>Cerrar</button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <FundDetailsPanel fundId={fundId} detail={detail} startStr={startStr} endStr={endStr} collaborators={collaborators} />
+                <FundDetailsPanel fundId={fundId} detail={detail} startStr={startStr} endStr={endStr} collaborators={collaborators} currencySymbol={currencySymbol} />
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold">Pago con QR</p>
@@ -170,13 +176,7 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
                     </div>
                   )}
                 </div>
-                <div>
-                  <label className="text-sm">Moneda de depósito</label>
-                  <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="mt-1 w-full rounded-md bg-black/30 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-primary p-2">
-                    {isCelo ? <option value="cCOP">cCOP</option> : null}
-                    <option value={nativeLabel}>{nativeLabel}</option>
-                  </select>
-                </div>
+                
                 <div>
                   <label className="text-sm">Wallet para retiro</label>
                   <select
@@ -196,15 +196,18 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
                     )}
                   </select>
                 </div>
-                <input
-                  type="number"
-                  min={0}
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Monto"
-                  step="any"
-                  className="mt-2 w-full rounded-md bg-black/30 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary p-2"
-                />
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Monto"
+                    step="any"
+                    className="flex-1 rounded-md bg-black/30 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary p-2"
+                  />
+                  <span className="px-2 py-1 rounded-md border border-white/20 bg-white/10 text-sm">{currencySymbol}</span>
+                </div>
                 <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2">
                   <button className="w-full h-10 rounded-md bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold shadow-glow disabled:opacity-60" onClick={deposit} disabled={loading !== null}>{loading === "deposit" ? "Depositando..." : "Depositar"}</button>
                   <button className="w-full h-10 rounded-md bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white font-semibold shadow-glow disabled:opacity-60" onClick={stake} disabled={loading !== null}>{loading === "stake" ? "Staking..." : "Stake"}</button>
@@ -224,9 +227,10 @@ type FundDetailsPanelProps = {
   startStr: string;
   endStr: string;
   collaborators?: string[];
+  currencySymbol: string;
 };
 
-const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = [] }: FundDetailsPanelProps) => {
+const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = [], currencySymbol }: FundDetailsPanelProps) => {
   const balanceDisplay = (detail as any)?.balanceStr ?? String(detail?.balance ?? 0n);
   const stakeDisplay = (detail as any)?.stakedBalanceStr ?? String(detail?.stakedBalance ?? 0n);
   const privilegedList = (Array.isArray(detail.privileged) ? detail.privileged : []).filter((a) => String(a) !== ZERO_ADDRESS);
@@ -244,6 +248,7 @@ const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = []
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
           <p className="text-white/70 text-xs">Saldo</p>
           <p className="text-xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">{balanceDisplay}</p>
+          <span className="text-xs text-white/70">{currencySymbol}</span>
         </div>
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
           <p className="text-white/70 text-xs">Stake</p>

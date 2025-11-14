@@ -80,9 +80,9 @@ app/
 
 Las direcciones actuales del contrato principal están en `hooks/contracts/contracts.json`.
 
-- Chain ID `42220` (Celo Mainnet): `0x660cBF691952278bc54265Dfa0E8f1595A4473Ca`
-- Chain ID `11142220`: `0x054237FC55A63d4a18fF5Bfb4d0778d73097fbAc`
-- Chain ID `81` (Astar Shibuya Testnet): `0x931c27184b08E469Ba7BC6bC0e540E06e41A456E`
+ - Chain ID `42220` (Celo Mainnet): `0x69E974fD8FE0016CCDB059f6e1De302Ff690A3A5`
+ - Chain ID `11142220`: `0x250438285600A93d6224B95Ae39f32df63f11059`
+- Chain ID `81` (Astar Shibuya Testnet): `0x54E1C268D37751Ea0a65b9E58dC3430CA8676575`
 
 > Nota: Verifica el archivo `hooks/contracts/contracts.json` para actualizaciones y ambientes adicionales.
 

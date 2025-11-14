@@ -14,20 +14,13 @@ import { Users, ChevronDown } from "lucide-react";
 
 export default function HomePage() {
   const { ready, userAddress } = useAuth();
-  const { readsState, userFunds, userFundsDetailsData, totalBalanceStr, tokenAddress, depositNative, depositToken } = useSaves();
+  const { readsState, userFunds, userFundsDetailsData, totalBalanceStr, tokenAddress, depositNative, depositToken, currencySymbol, walletDisplayStr } = useSaves();
   const [refreshKey, setRefreshKey] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
   const [showPurchaseQRModal, setShowPurchaseQRModal] = useState(false);
 
-  const { data: walletBalance } = useBalance({ address: userAddress as `0x${string}`, query: { enabled: !!userAddress } });
-  const walletFormatted5 = useMemo(() => {
-    if (!walletBalance) return null;
-    const s = walletBalance.formatted;
-    const [intPart, decPart = ""] = s.split(".");
-    const d = decPart.slice(0, 5);
-    return d ? `${intPart}.${d}` : intPart;
-  }, [walletBalance]);
+  
 
   
 
@@ -87,12 +80,12 @@ export default function HomePage() {
             </div>
             <div className="rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-glow">
               <p className="text-sm text-white/80">Saldo de fondos</p>
-              <p className="text-3xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">{totalBalanceStr}</p>
+              <p className="text-3xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">{`${totalBalanceStr} ${currencySymbol}`}</p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-glow">
               <p className="text-sm text-white/80">Saldo de tu wallet</p>
               <p className="text-2xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
-                {walletFormatted5 ? `${walletFormatted5} ${walletBalance?.symbol ?? ""}` : "-"}
+                {walletDisplayStr ? `${walletDisplayStr} ${currencySymbol}` : "-"}
               </p>
             </div>
             <div className="rounded-2xl border border-white/20 bg-gradient-to-br from-primary/20 to-pink-500/20 p-5 shadow-glow flex items-center justify-center">
