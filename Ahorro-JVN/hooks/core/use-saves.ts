@@ -7,12 +7,9 @@ import { useBalance, usePublicClient } from "wagmi";
 import { useNextFundId, usePenaltyDuration, useTokenAddress, useUserFunds, useSavesJVNWrites, useReadFund, useERC20Writes, useERC20Allowance, ERC20_ABI } from "../contracts/savesJVN";
 import type { Address } from "viem";
 
-// cCOP token addresses
-const CELO_MAINNET_CCOP = "0x8A567e2aE79CA692Bd748aB832081C45de4041eA";
-const CELO_SEPOLIA_CCOP = "0x5F8d55c3627d2dc0a2B4afa798f877242F382F67";
 
 // Acceso simple al address por chainId sin validaciones
-type ContractsByChain = Record<number, { address: Address }>;
+type ContractsByChain = Record<number, { address: Address; ccop?: Address; usdc?: Address }>;
 const CONTRACTS = contracts as unknown as ContractsByChain;
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
 const MAX_USER_FUNDS = 20;
@@ -69,7 +66,9 @@ export function useSaves(){
           const active = Boolean(d[8]);
           const balanceStr = formatAmount5(balance);
           const stakedBalanceStr = formatAmount5(stakedBalance);
-          return { fundType, owner, startTime, endTime, privileged, beneficiaries, balance, stakedBalance, active, balanceStr, stakedBalanceStr };
+          // Propiedad mock de rendimiento (%): si hay balance, 18%; si no, 0%
+          const earns = balance > 0n ? 18 : 0;
+          return { fundType, owner, startTime, endTime, privileged, beneficiaries, balance, stakedBalance, active, balanceStr, stakedBalanceStr, earns };
         }
         return d;
       })
@@ -111,15 +110,22 @@ export function useSaves(){
 
     // Hook de escritura del contrato
     const writes = useSavesJVNWrites(contractAddr);
-    const ccopAddr: Address = ((chainId === 42220 ? CELO_MAINNET_CCOP : chainId === 11142220 ? CELO_SEPOLIA_CCOP : ZERO_ADDRESS) as Address);
-    const erc20Writes = useERC20Writes(ccopAddr);
+    // Selección de ERC20 según red actual (Celo => cCOP, Base/Arbitrum => USDC). Si no existe, se usa nativo (ASTR/SBY)
+    const erc20ConfiguredAddr = (CONTRACTS[chainId]?.ccop || CONTRACTS[chainId]?.usdc || null) as Address | null;
+    const erc20Addr: Address = (erc20ConfiguredAddr ?? ZERO_ADDRESS) as Address;
+    const erc20Writes = useERC20Writes(erc20Addr);
+    const isTokenNet = isValidAddress(erc20Addr);
     const isCeloNet = chainId === 42220 || chainId === 11142220;
     const isShibuya = chainId === 81;
-    const currencySymbol = isCeloNet ? "cCOP" : isShibuya ? "SBY" : "ASTR";
-    const allowanceQuery = useERC20Allowance(ccopAddr, userAddr, contractAddr, isCeloNet && isValidAddress(ccopAddr) && userEnabled && contractEnabled);
+    const currencySymbol = isShibuya
+      ? "SBY"
+      : isTokenNet
+        ? (isCeloNet ? "cCOP" : "USDC")
+        : "ASTR";
+    const allowanceQuery = useERC20Allowance(erc20Addr, userAddr, contractAddr, isTokenNet && userEnabled && contractEnabled);
 
     const { data: walletBalance } = useBalance({ address: userAddr as `0x${string}`, query: { enabled: userEnabled } });
-    const { data: walletTokenBalance } = useBalance({ address: userAddr as `0x${string}`, token: ccopAddr as any, query: { enabled: userEnabled && isCeloNet && isValidAddress(ccopAddr) } });
+    const { data: walletTokenBalance } = useBalance({ address: userAddr as `0x${string}`, token: erc20Addr as any, query: { enabled: userEnabled && isTokenNet && isValidAddress(erc20Addr) } });
     const walletFormatted5 = useMemo(() => {
       if (!walletBalance) return null;
       const s = walletBalance.formatted;
@@ -134,7 +140,7 @@ export function useSaves(){
       const d = decPart.slice(0, 5);
       return d ? `${intPart}.${d}` : intPart;
     }, [walletTokenBalance]);
-    const walletDisplayStr = isCeloNet ? walletTokenFormatted5 : walletFormatted5;
+    const walletDisplayStr = isTokenNet ? walletTokenFormatted5 : walletFormatted5;
 
     // Wrappers de escritura con validaciones del core
     const createFund = async (params: { fundType: number; durationSeconds: bigint | number; privilegedWallets: string[]; beneficiaryWallets: string[]; }) => {
@@ -183,7 +189,7 @@ export function useSaves(){
     const publicClient = usePublicClient();
     const approveCCOP = async (amount: bigint | number) => {
       if (!contractEnabled) throw new Error("Contrato no disponible o inválido en el chain actual");
-      if (!isValidAddress(ccopAddr)) throw new Error("Token no disponible en la red actual");
+      if (!isValidAddress(erc20Addr)) throw new Error("Token no disponible en la red actual");
       const needed = toBigInt(amount);
       const current = allowanceQuery?.data ?? 0n;
       if (current >= needed) return;

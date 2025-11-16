@@ -14,15 +14,12 @@ import { Users, ChevronDown } from "lucide-react";
 
 export default function HomePage() {
   const { ready, userAddress } = useAuth();
-  const { readsState, userFunds, userFundsDetailsData, totalBalanceStr, tokenAddress, depositNative, depositToken, currencySymbol, walletDisplayStr } = useSaves();
+  const { readsState, userFunds, userFundsDetailsData, totalBalanceStr, tokenAddress, depositNative, depositToken, approveCCOP, currencySymbol, walletDisplayStr } = useSaves();
   const [refreshKey, setRefreshKey] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [collabOpen, setCollabOpen] = useState(false);
   const [showPurchaseQRModal, setShowPurchaseQRModal] = useState(false);
 
-  
-
-  
 
   const fundsData = useMemo(() => {
     const ids = (userFunds as bigint[] | undefined) || [];
@@ -104,6 +101,13 @@ export default function HomePage() {
                 Leer QR de compra
               </button>
             </div>
+            <div className="rounded-2xl border border-white/20 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-5 shadow-glow flex items-center justify-center">
+              <button
+                className="w-full h-10 rounded-md bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold px-6 md:px-8 flex items-center justify-center whitespace-nowrap"
+              >
+                Partners Rewards
+              </button>
+            </div>
           </div>
         </section>
 
@@ -174,6 +178,7 @@ export default function HomePage() {
         tokenAddress={tokenAddress as any}
         depositNative={depositNative}
         depositToken={depositToken}
+        approveCCOP={approveCCOP}
         onSuccess={() => setRefreshKey((x) => x + 1)}
       />
 

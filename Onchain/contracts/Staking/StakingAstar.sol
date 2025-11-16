@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import "./IDAppStaking.sol";
+import "../Interfaces/IAstarStaking.sol";
 
 
-contract Staking {
+contract StakingAstar {
     error NativeTransferFailed();
     // Dirección del precompile DApps Staking V3 (Astar/Shibuya)
     address constant DAPPS_STAKING_V3 = 0x0000000000000000000000000000000000005001;

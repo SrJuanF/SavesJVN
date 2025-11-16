@@ -1,12 +1,10 @@
 const hre = require("hardhat");
 const { ethers, getNamedAccounts, network, deployments } = hre;
+const { networkConfig } = require("../helper-hardhat-config");
 
-// Direcciones de cCOP
-const CELO_MAINNET_CCOP = "0x8A567e2aE79CA692Bd748aB832081C45de4041eA";
-const CELO_SEPOLIA_CCOP = "0x5F8d55c3627d2dc0a2B4afa798f877242F382F67";
 
 const SIX_MONTHS_SECONDS = 180 * 24 * 60 * 60;
-const DEFAULT_DEPOSIT = "1"; // 1 cCOP (asumiendo 18 decimales)
+const DEFAULT_DEPOSIT = "0.01"; // 1 cCOP (asumiendo 18 decimales)
 
 const ERC20_ABI = [
   "function balanceOf(address) view returns (uint256)",
@@ -45,11 +43,6 @@ async function ensureContract(networkName, signer) {
   return SavesJVN.attach(deployed.address).connect(signer);
 }
 
-async function resolveToken(networkName) {
-  if (networkName === "celoMainnet") return CELO_MAINNET_CCOP;
-  if (networkName === "celoSepolia") return CELO_SEPOLIA_CCOP;
-  throw new Error(`Red no soportada para WorkCelo: ${networkName}`);
-}
 
 async function createFund(contract, deployer) {
   const ZERO = ethers.ZeroAddress;
@@ -78,9 +71,14 @@ async function depositToken(contract, fundId, tokenAddress, amountStr, signer, d
   }
 
   // Aprobación previa
-  console.log(`Aprobando ${amountStr} cCOP (${amount} unidades) para el contrato...`);
+  console.log(`Aprobando ${amountStr} ERC20 (${amount} unidades) para el contrato...`);
   const txApprove = await withRetry(() => token.approve(contract.target, amount));
-  await withRetry(() => txApprove.wait());
+  const receiptApprove = await withRetry(() => txApprove.wait());
+  if (receiptApprove && receiptApprove.status !== undefined && receiptApprove.status !== 1) {
+    throw new Error("Transacción de approve fallida");
+  }
+  console.log("Approve exitoso:", receiptApprove?.transactionHash || txApprove.hash);
+
   const allowance = await token.allowance(deployerAddress, contract.target);
   console.log("Allowance actual:", ethers.formatUnits(allowance, decimals));
   if (allowance < amount) {
@@ -153,11 +151,16 @@ async function showParticipantsStatus(contract, fundId) {
 
 async function main() {
   const networkName = network.name;
+  const chainId = network.config.chainId;
   const { deployer } = await getNamedAccounts();
   const signer = await ethers.getSigner(deployer);
   console.log(`Network: ${networkName}, Deployer: ${deployer}`);
 
-  const tokenAddress = await resolveToken(networkName);
+  const cfg = networkConfig[chainId];
+  if (!cfg || !cfg.erc20 || cfg.erc20 === ethers.ZeroAddress) {
+    throw new Error(`ERC20 no configurado para chainId ${chainId}`);
+  }
+  const tokenAddress = cfg.erc20;
   const contract = await ensureContract(networkName, signer);
 
   // Validar que es modo token

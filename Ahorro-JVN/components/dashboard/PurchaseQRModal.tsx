@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { FundStruct } from "@/hooks/contracts/savesJVN";
-import { ZERO_ADDRESS } from "@/hooks/core/use-saves";
+import { ZERO_ADDRESS, useSaves } from "@/hooks/core/use-saves";
 
 type PurchaseQRModalProps = {
   open: boolean;
@@ -11,10 +11,11 @@ type PurchaseQRModalProps = {
   tokenAddress?: string;
   depositNative: (fundId: bigint | number, value?: bigint | number) => Promise<any>;
   depositToken: (fundId: bigint | number, amount: bigint | number) => Promise<any>;
+  approveCCOP: (amount: bigint | number) => Promise<any>;
   onSuccess?: () => void;
 };
 
-export const PurchaseQRModal = ({ open, onClose, funds, tokenAddress, depositNative, depositToken, onSuccess }: PurchaseQRModalProps) => {
+export const PurchaseQRModal = ({ open, onClose, funds, tokenAddress, depositNative, depositToken, approveCCOP, onSuccess }: PurchaseQRModalProps) => {
   const [processing, setProcessing] = useState(false);
   const [selectedFundId, setSelectedFundId] = useState<bigint | null>(funds && funds.length > 0 ? funds[0].id : null);
   const [method, setMethod] = useState<"round" | "fixed" | "percent">("fixed");
@@ -38,7 +39,11 @@ export const PurchaseQRModal = ({ open, onClose, funds, tokenAddress, depositNat
     const amountWei = toWeiStr(amountMap[method]);
     setProcessing(true);
     try {
-      if (isCelo) await depositToken(fid, amountWei);
+      if (isCelo) {
+        // Igual que en FundCard: aprobar y esperar confirmación antes del depósito
+        await approveCCOP(amountWei);
+        await depositToken(fid, amountWei);
+      }
       else await depositNative(fid, amountWei);
       onClose();
       onSuccess?.();

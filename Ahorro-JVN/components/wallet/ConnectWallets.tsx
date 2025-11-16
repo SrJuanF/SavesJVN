@@ -7,6 +7,7 @@ import { Wallet, LogOut, ChevronDown, Network, Copy, Check, User } from "lucide-
 import { useState, useRef, useEffect } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import Link from "next/link";
+import { BridgeModal } from "@/components/bridges/Bridge";
 
 // Simple helpers/components to replace missing UI imports
 function shortenAddress(addr: string, left: number = 6, right: number = 4) {
@@ -37,6 +38,7 @@ export function ConnectWalletButton() {
   const [copied, setCopied] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showBridge, setShowBridge] = useState(false);
   
   // Privy hooks
   const { ready, authenticated} = usePrivy();
@@ -174,6 +176,19 @@ export function ConnectWalletButton() {
                 <span className="text-sm">Dashboard</span>
               </Link>
             </div>
+
+            <div className="px-4 py-3 border-b border-white/10">
+              <button
+                onClick={() => {
+                  setShowBridge(true);
+                  setIsDropdownOpen(false);
+                }}
+                className="w-full flex items-center gap-2 p-2 rounded-md hover:bg-white/10 transition-colors duration-200"
+              >
+                <Network className="h-4 w-4" />
+                <span className="text-sm">Bridge</span>
+              </button>
+            </div>
             
             {/* Disconnect Section */}
             <div className="px-4 py-3">
@@ -189,6 +204,9 @@ export function ConnectWalletButton() {
               </button>
             </div>
           </div>
+        )}
+        {showBridge && (
+          <BridgeModal open={showBridge} onClose={() => setShowBridge(false)} />
         )}
       </div>
     );

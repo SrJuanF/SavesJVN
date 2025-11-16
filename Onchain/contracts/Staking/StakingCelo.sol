@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import './ICeloStaking.sol';
+import '../Interfaces/ICeloStaking.sol';
 
 contract StakingCelo {
     CeloStakingGold private constant LOCKED_GOLD = CeloStakingGold(0x55E1A0C8f376964bd339167476063bFED7f213d5);

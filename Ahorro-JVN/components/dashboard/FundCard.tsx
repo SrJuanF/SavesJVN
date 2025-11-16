@@ -102,6 +102,7 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
   };
   const startStr = formatTs(detail?.startTime);
   const endStr = formatTs(detail?.endTime);
+  const earns = (detail as any)?.earns ?? 0;
 
   return (
     <>
@@ -130,6 +131,9 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
           <span>{startStr}</span>
           <span>→</span>
           <span>{endStr}</span>
+        </div>
+        <div className="mt-2 text-xs font-semibold text-emerald-300">
+          Rendimiento estimado: {earns}%
         </div>
       </div>
 
@@ -233,6 +237,7 @@ type FundDetailsPanelProps = {
 const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = [], currencySymbol }: FundDetailsPanelProps) => {
   const balanceDisplay = (detail as any)?.balanceStr ?? String(detail?.balance ?? 0n);
   const stakeDisplay = (detail as any)?.stakedBalanceStr ?? String(detail?.stakedBalance ?? 0n);
+  const earns = (detail as any)?.earns ?? 0;
   const privilegedList = (Array.isArray(detail.privileged) ? detail.privileged : []).filter((a) => String(a) !== ZERO_ADDRESS);
   const beneficiariesList = (Array.isArray(detail.beneficiaries) ? detail.beneficiaries : []).filter((a) => String(a) !== ZERO_ADDRESS);
   const labelForAddr = (addr: unknown) => {
@@ -253,6 +258,12 @@ const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = []
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
           <p className="text-white/70 text-xs">Stake</p>
           <p className="text-xl font-extrabold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">{stakeDisplay}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-3 mt-2">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
+          <p className="text-emerald-200 text-xs">Rendimiento estimado</p>
+          <p className="text-xl font-extrabold text-emerald-300">{earns}%</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 text-xs">

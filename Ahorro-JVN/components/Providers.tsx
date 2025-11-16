@@ -2,7 +2,7 @@
 
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {defineChain, http} from 'viem';
-import {celo, celoSepolia, astar} from 'viem/chains';
+import {celo, celoSepolia, astar, baseSepolia, base, arbitrumSepolia, arbitrum} from 'viem/chains';
 import type {PrivyClientConfig} from '@privy-io/react-auth';
 import {PrivyProvider} from '@privy-io/react-auth';
 import {WagmiProvider, createConfig} from '@privy-io/wagmi';
@@ -30,16 +30,20 @@ export const astarShibuya = defineChain({
 });
 
 // Configure the chains you want to support
-export const chains = [celo, astar, astarShibuya, celoSepolia] as const;
+export const chains = [celo, celoSepolia, astar, astarShibuya, base, baseSepolia, arbitrum, arbitrumSepolia] as const;
 // Create wagmi config with Privy integration
 export const wagmiConfig = createConfig({
   chains,
   connectors: [injected()],
   transports: {
     [celo.id]: http(),
+    [celoSepolia.id]: http(),
     [astar.id]: http(),
     [astarShibuya.id]: http(),
-    [celoSepolia.id]: http(),
+    [base.id]: http(),
+    [baseSepolia.id]: http(),
+    [arbitrum.id]: http(),
+    [arbitrumSepolia.id]: http(),
   },
   //ssr: true, // Enable SSR support
 });
@@ -55,7 +59,7 @@ const privyConfig: PrivyClientConfig = {
     showWalletLoginFirst: true,
   },
   defaultChain: celo,
-  supportedChains: [celo, astar, astarShibuya, celoSepolia],
+  supportedChains: [celo, celoSepolia, astar, astarShibuya, base, baseSepolia, arbitrum, arbitrumSepolia],
 };
 
 const queryClient = new QueryClient();
