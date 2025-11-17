@@ -1,55 +1,55 @@
-# Ahorro JVN — DApp de Ahorro Juvenil Web3
+# Ahorro JVN — Web3 Youth Savings DApp
 
-Ahorro JVN es una plataforma descentralizada de ahorro juvenil construida sobre Next.js, TailwindCSS, y redes Web3 como Astar y Celo, que permite a jóvenes, familiares e instituciones crear, gestionar y hacer crecer fondos de ahorro con impacto social.
+Ahorro JVN is a decentralized youth savings platform built on Next.js, TailwindCSS, and Web3 networks like Astar and Celo. It enables youth, families, and institutions to create, manage, and grow savings funds with social impact.
 
-## 🚀 Visión
+## 🚀 Vision
 
-Promover la inclusión financiera juvenil mediante una aplicación sencilla y transparente que combine ahorro, microaportes automáticos y staking, impulsando la educación y el futuro económico de las nuevas generaciones.
+Promote youth financial inclusion through a simple and transparent application that combines savings, automatic micro‑contributions, and staking—empowering education and the economic future of new generations.
 
-## 🎯 Objetivos del Proyecto
+## 🎯 Project Objectives
 
-- Democratizar el acceso al ahorro y la inversión desde edades tempranas.
-- Fomentar la colaboración familiar y comunitaria en metas financieras de largo plazo.
-- Integrar ecosistemas Web3 con propósitos reales, usando ASTR y cCOP como monedas base.
-- Simular y luego desplegar flujos financieros: seguro → ahorro → inversión → rendimiento.
+- Democratize access to savings and investment from an early age.
+- Encourage family and community collaboration around long‑term financial goals.
+- Integrate Web3 ecosystems for real‑world purposes, using ASTR and cCOP as base currencies.
+- Simulate and then deploy financial flows: insurance → savings → investment → returns.
 
-## 🧱 Arquitectura General
+## 🧱 General Architecture
 
 **Frontend**
-- ⚙️ Framework: Next.js 14+ (App Router)
-- 🎨 Estilos: Tailwind CSS + shadcn/ui
-- 💎 Animaciones: Framer Motion
-- 📈 Gráficos: Recharts
+- Framework: Next.js 14+ (App Router)
+- Styles: Tailwind CSS + shadcn/ui
+- Animations: Framer Motion
+- Charts: Recharts
 
-**Integraciones Web3**
-- 🔗 Redes: Astar (ASTR) y Celo (cCOP)
-- 💼 Wallets: Conexión vía Privy (email + social login)
-- 💸 Contratos inteligentes (en desarrollo):
-  - Microaportes automáticos
-  - Staking con reglas y penalizaciones
- - 🔀 Bridge de tokens entre blockchains (simulado en UI): selección de red origen/destino, activos nativos o ERC20 (cCOP/USDC), y opción de ejecutar Depósito o Inversión al llegar. Respeta el ambiente (mainnet/testnet) de la red de origen.
+**Web3 Integrations**
+- Networks: Astar (ASTR) and Celo (cCOP)
+- Wallets: Connection via Privy (email + social login)
+- Smart contracts (in development):
+  - Automatic micro‑contributions
+  - Staking with rules and penalties
+- Token bridge between blockchains (simulated in the UI): select source/destination network, native or ERC‑20 assets (cCOP/USDC), and choose whether to Deposit or Invest upon arrival. Respects the environment (mainnet/testnet) of the source network.
 
-## 🧭 Flujo del Usuario
+## 🧭 User Flow
 
-1. Crear un Fondo de Ahorro
-   - Elegir tipo: universitario, pensional, voluntario
-   - Definir duración y beneficiarios
-2. Depositar Fondos
-   - Usar ASTR (Astar) o cCOP (Celo)
-   - Visualizar conversión entre redes
-3. Activar Microaportes
-   - Configurar redondeo, porcentaje o monto fijo
-   - Simular eventos de pago o integrar PSP
-4. Hacer Staking
-   - Stakear parte del fondo para obtener rendimientos
-   - Penalización por retiro anticipado (< 5 años)
-5. Bridge entre redes
-   - Seleccionar red origen y destino dentro del mismo ambiente (mainnet/testnet)
-   - Elegir activo nativo o ERC20 (cCOP/USDC)
-   - Definir acción al llegar: Depositar en fondos o Invertir
-   - Disponible desde el dropdown de la wallet o el switch de redes
+1. Create a Savings Fund
+   - Choose type: university, pension, voluntary
+   - Define duration and beneficiaries
+2. Deposit Funds
+   - Use ASTR (Astar) or cCOP (Celo)
+   - Visualize cross‑network conversion
+3. Activate Micro‑Contributions
+   - Configure round‑up, percentage, or fixed amount
+   - Simulate payment events or integrate a PSP
+4. Staking
+   - Stake part of the fund to obtain returns
+   - Penalty for early withdrawal (< 5 years)
+5. Cross‑network Bridge
+   - Select source and destination networks within the same environment (mainnet/testnet)
+   - Choose native asset or ERC‑20 (cCOP/USDC)
+   - Define action upon arrival: Deposit into funds or Invest
+   - Available from the wallet dropdown or network switch
 
-## 🧩 Estructura del Proyecto
+## 🧩 Project Structure
 
 ```
 components/
@@ -81,88 +81,88 @@ app/
     page.tsx
 ```
 
-## 📜 Contratos Desplegados
+## 📜 Deployed Contracts
 
-Las direcciones actuales del contrato principal y tokens están en `hooks/contracts/contracts.json`.
+Current addresses for the main contract and tokens are in `hooks/contracts/contracts.json`.
 
 - Chain ID `42220` (Celo Mainnet)
-  - Contrato: `0x69E974fD8FE0016CCDB059f6e1De302Ff690A3A5`
+  - Contract: `0x69E974fD8FE0016CCDB059f6e1De302Ff690A3A5`
   - cCOP: `0x8A567e2aE79CA692Bd748aB832081C45de4041eA`
 - Chain ID `11142220`
-  - Contrato: `0x250438285600A93d6224B95Ae39f32df63f11059`
+  - Contract: `0x250438285600A93d6224B95Ae39f32df63f11059`
   - cCOP: `0x5F8d55c3627d2dc0a2B4afa798f877242F382F67`
 - Chain ID `81` (Astar Shibuya Testnet)
-  - Contrato: `0x54E1C268D37751Ea0a65b9E58dC3430CA8676575`
+  - Contract: `0x54E1C268D37751Ea0a65b9E58dC3430CA8676575`
 - Chain ID `8453` (Base Mainnet)
   - USDC: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`
 - Chain ID `84532` (Base Sepolia)
-  - Contrato: `0x2a13F021E8E0622977eF209148e02e5A2eA768Fa`
+  - Contract: `0x2a13F021E8E0622977eF209148e02e5A2eA768Fa`
   - USDC: `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
 - Chain ID `42161` (Arbitrum One)
   - USDC: `0xaf88d065e77c8cC2239327C5EDb3A432268e5831`
 - Chain ID `421614` (Arbitrum Sepolia)
-  - Contrato: `0x2a13F021E8E0622977eF209148e02e5A2eA768Fa`
+  - Contract: `0x2a13F021E8E0622977eF209148e02e5A2eA768Fa`
   - USDC: `0xaf88d065e77c8cC2239327C5EDb3A432268e5831`
 
-Nota: Verifica el archivo `hooks/contracts/contracts.json` para actualizaciones y ambientes adicionales.
+Note: Check the `hooks/contracts/contracts.json` file for updates and additional environments.
 
-## 🧠 Roadmap — Fase 1 (App & UX)
+## 🧠 Roadmap — Phase 1 (App & UX)
 
-- Base Next.js + Tailwind y patrones UI
-- Formularios y detalle de Fondos (crear, listar, métricas)
-- Depósitos a fondos (nativo/erc20) y aprobación de tokens
-- Microaportes automáticos (mock + configuración de reglas)
-- Identidad y conexión: Privy + Wagmi
-- Dashboard con KPIs y resumen financiero
-- QR de compras y flujo de aporte
+- Next.js + Tailwind base and UI patterns
+- Fund forms and details (create, list, metrics)
+- Deposits to funds (native/ERC‑20) and token approval
+- Automatic micro‑contributions (mock + rule configuration)
+- Identity and connection: Privy + Wagmi
+- Dashboard with KPIs and financial summary
+- Purchase QR and contribution flow
 
-## 🧠 Roadmap — Fase 2 (On‑chain & Infra)
+## 🧠 Roadmap — Phase 2 (On‑chain & Infra)
 
-- Staking en blockchain (Astar/Celo)
-  - Diseño de reglas, tiempos de maduración y penalizaciones
-  - Eventos on-chain y lectura de estado para métricas
-  - Integración de retiro y beneficiarios
-- Bridge de tokens entre redes
-  - UI: catálogo de activos (nativas y ERC20: cCOP/USDC)
-  - Validación de ambientes (mainnet/testnet) y selección de redes
-  - Acción al llegar: depósito en fondos o inversión
-  - Integración con Relayers para ejecución real
-- Relayers Nodes en Celo y Astar
-  - Topología, colas de mensajes y garantías de entrega
-  - Observabilidad (logs, alertas) y seguridad
-  - Pruebas de carga y resiliencia
-- Indexación y datos
-  - Subgraphs (The Graph) para fondos, depósitos, staking y bridges
-  - Métricas para dashboard e informes
-- Seguridad y auditoría
-  - Uso de OpenZeppelin y patrones de acceso
-  - Tests unitarios e integración (Hardhat/Foundry)
+- Blockchain staking (Astar/Celo)
+  - Design rules, maturity times, and penalties
+  - On‑chain events and state reading for metrics
+  - Integration of withdrawals and beneficiaries
+- Token bridge between networks
+  - UI: asset catalog (native and ERC‑20: cCOP/USDC)
+  - Environment validation (mainnet/testnet) and network selection
+  - Action on arrival: deposit into funds or investment
+  - Integration with relayers for real execution
+- Relayer nodes on Celo and Astar
+  - Topology, message queues, and delivery guarantees
+  - Observability (logs, alerts) and security
+  - Load testing and resilience
+- Indexing and data
+  - Subgraphs (The Graph) for funds, deposits, staking, and bridges
+  - Metrics for dashboard and reports
+- Security and audit
+  - Use of OpenZeppelin and access patterns
+  - Unit and integration tests (Hardhat/Foundry)
 
 ## 📦 Onchain
 
-El detalle de contratos, tokens y despliegues on-chain vive en `Onchain/README.md` (contratos, redes soportadas, direcciones y guías de pruebas). Refiere también a `hooks/contracts/contracts.json` para el mapa de direcciones usado por el frontend.
+Details of contracts, tokens, and on‑chain deployments live in `Onchain/README.md` (contracts, supported networks, addresses, and test guides). Also refer to `hooks/contracts/contracts.json` for the address map used by the frontend.
 
-## 🌍 Impacto y Comunidad
+## 🌍 Impact & Community
 
-Ahorro JVN busca ser una herramienta Web3 educativa y social, ideal para:
+Ahorro JVN aims to be an educational and social Web3 tool, ideal for:
 
-- Familias que desean apoyar metas de ahorro de jóvenes.
-- Escuelas y programas de educación financiera.
-- Inversionistas con enfoque de impacto y sostenibilidad.
-- Desarrolladores interesados en DeFi con propósito social.
+- Families who want to support youth savings goals.
+- Schools and financial education programs.
+- Impact‑focused and sustainability‑minded investors.
+- Developers interested in purpose‑driven DeFi.
 
-## 🤝 Contribuir
+## 🤝 Contributing
 
-1. Forkea este repositorio
-2. Crea una nueva rama (`feature/nueva-funcionalidad`)
-3. Haz tus cambios y envía un Pull Request 🚀
+1. Fork this repository
+2. Create a new branch (`feature/new-functionality`)
+3. Make your changes and submit a Pull Request 🚀
 
-## 🧾 Licencia
+## 🧾 License
 
-Este proyecto está bajo licencia MIT — libre para usar, mejorar y compartir.
+This project is under the MIT license — free to use, improve, and share.
 
-## 📬 Contacto
+## 📬 Contact
 
-- Desarrollador: Daniel Vargas Hermosa
-- 🔗 GitHub: `github.com/daniel5312`
-- 🔗 LinkedIn: `linkedin.com/in/daniel-vargas-hermosa`
+- Developer: Daniel Vargas Hermosa
+- GitHub: `github.com/daniel5312`
+- LinkedIn: `linkedin.com/in/daniel-vargas-hermosa`
