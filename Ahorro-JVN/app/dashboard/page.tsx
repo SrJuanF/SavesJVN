@@ -102,11 +102,14 @@ export default function HomePage() {
               </button>
             </div>
             <div className="rounded-2xl border border-white/20 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 p-5 shadow-glow flex items-center justify-center">
-              <button
+              <a
+                href="https://unitpoints.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full h-10 rounded-md bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 font-semibold px-6 md:px-8 flex items-center justify-center whitespace-nowrap"
               >
                 Partners Rewards
-              </button>
+              </a>
             </div>
           </div>
         </section>
