@@ -10,10 +10,10 @@ async function main() {
 
   // Elegir el deployment del contrato: permite STAKING_DEPLOYMENT_NAME, por defecto 'Staking'
 
-  let stakingDeployment = await deployments.get("Staking");
+  let stakingDeployment = await deployments.get("StakingAstar");
 
   const staking = await ethers.getContractAt(
-    "Staking",
+    "StakingAstar",
     stakingDeployment.address,
     signer
   );

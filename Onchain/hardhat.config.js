@@ -61,26 +61,24 @@ module.exports = {
       saveDeployments: true,
     },
     arbitrumSepolia: {
-      url: process.env.ARBITRUM_SEPOLIA_RPC || "https://sepolia-rollup.arbitrum.io/rpc",
+      url:
+        process.env.ARBITRUM_SEPOLIA_RPC ||
+        "https://sepolia-rollup.arbitrum.io/rpc",
       chainId: 421614,
       accounts: PRIVATE_KEY,
       saveDeployments: true,
     },
   },
-    etherscan: {
-    // npx hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
-    apiKey: {
-      celoMainnet: process.env.ETHERSCAN_API_KEY || "",
-      celoSepolia: process.env.ETHERSCAN_API_KEY || "",
-      baseMainnet: process.env.BASESCAN_API_KEY || "",
-      baseSepolia: process.env.BASESCAN_API_KEY || "",
-      arbitrumOne: process.env.ARBISCAN_API_KEY || "",
-      arbitrumSepolia: process.env.ARBISCAN_API_KEY || "",
-    },
+  etherscan: {
+    // Migración a Etherscan API V2: una sola API key para múltiples cadenas
+    // https://docs.etherscan.io/v2-migration
+    apiKey: process.env.ETHERSCAN_API_KEY || "",
+    // Usamos el endpoint unificado V2 para todas las redes soportadas
     customChains: [
       {
         network: "celoMainnet",
         chainId: 42220,
+        apiURL: "https://api.etherscan.io/v2/api",
         urls: {
           apiURL: "https://api.celoscan.io/api",
           browserURL: "https://celoscan.io",
@@ -89,6 +87,7 @@ module.exports = {
       {
         network: "celoSepolia",
         chainId: 11142220,
+        apiURL: "https://api.etherscan.io/v2/api",
         urls: {
           apiURL: "https://api-sepolia.celoscan.io/api",
           browserURL: "https://sepolia.celoscan.io",
@@ -98,7 +97,7 @@ module.exports = {
         network: "baseMainnet",
         chainId: 8453,
         urls: {
-          apiURL: "https://api.basescan.org/api",
+          apiURL: "https://api.etherscan.io/v2/api",
           browserURL: "https://basescan.org",
         },
       },
@@ -106,7 +105,7 @@ module.exports = {
         network: "baseSepolia",
         chainId: 84532,
         urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
+          apiURL: "https://api.etherscan.io/v2/api",
           browserURL: "https://sepolia.basescan.org",
         },
       },
@@ -114,7 +113,7 @@ module.exports = {
         network: "arbitrumOne",
         chainId: 42161,
         urls: {
-          apiURL: "https://api.arbiscan.io/api",
+          apiURL: "https://api.etherscan.io/v2/api",
           browserURL: "https://arbiscan.io",
         },
       },
@@ -122,7 +121,7 @@ module.exports = {
         network: "arbitrumSepolia",
         chainId: 421614,
         urls: {
-          apiURL: "https://api-sepolia.arbiscan.io/api",
+          apiURL: "https://api.etherscan.io/v2/api",
           browserURL: "https://sepolia.arbiscan.io",
         },
       },
@@ -170,6 +169,6 @@ module.exports = {
     contractSizer: {
         runOnCompile: false,
         only: ["PhysicalRental"],
+
     },*/
 };
-

@@ -25,6 +25,8 @@ interface IERC20 {
     /// @return true si la operación fue exitosa.
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
 
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
+
     /// @dev Evento emitido en cada transferencia.
     event Transfer(address indexed from, address indexed to, uint256 value);
 

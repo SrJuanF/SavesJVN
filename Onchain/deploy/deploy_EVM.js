@@ -1,6 +1,6 @@
 const { network } = require("hardhat");
 const { verify } = require("../utils/verify");
-const { networkConfig } = require("../helper-hardhat-config");
+const { networkConfig, developmentChains } = require("../helper-hardhat-config");
 
 // 6 months in seconds (approx 180 days)
 const SIX_MONTHS_SECONDS = 180 * 24 * 60 * 60; // 15,552,000 seconds
@@ -23,10 +23,19 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log: true,
     waitConfirmations: network.config.blockConfirmations || 1,
   });
-  //log(`SavesJVN deployed on ${network.name} with address ${savesJVN.address}`);
-  /*if (networkName === "celoMainnet" || networkName === "celoSepolia") {
-    await verify(savesJVN.address, [tokenAddress, SIX_MONTHS_SECONDS]);
-  }*/
+  // Verificación automática usando Etherscan API V2 (evita redes locales)
+  try {
+    const canVerify = process.env.ETHERSCAN_API_KEY && !developmentChains.includes(network.name);
+    if (canVerify) {
+      await verify(savesJVN.address, [tokenAddress, SIX_MONTHS_SECONDS]);
+      log(`Verificación enviada para SavesJVN en ${network.name} (${savesJVN.address})`);
+    } else {
+      log("Omitiendo verificación: red local o ETHERSCAN_API_KEY no definido");
+    }
+  } catch (e) {
+    log(`Error al verificar SavesJVN en ${network.name}`);
+    log(e?.message || String(e));
+  }
 };
 
 module.exports.tags = ["EVM"];

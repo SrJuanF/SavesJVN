@@ -11,11 +11,21 @@ const networkConfig = {
         name: "celoMainnet",
         IsmpHost: "",
         erc20: "0x8A567e2aE79CA692Bd748aB832081C45de4041eA",
+        // Celo staking
+        celoAccount: "0x907f5C53C0E31dB06aF45BC58F076563469c525a",
+        celoLockedGold: "0x6cC083Aed9e3ebe302A6336dBC7c921C9f03349E",
+        celoElection: "0x8D6677192144292870907E3Fa8A5527fE55A7ff6",
+        celoValidators: "0xaEb865bCa93DdC8F47b8e29F40C5399cE34d0C58",
     },
     11142220: {
         name: "celoSepolia",
         IsmpHost: "",
         erc20: "0x5F8d55c3627d2dc0a2B4afa798f877242F382F67",
+        // Celo staking
+        celoAccount: "0x44957232699ca060B607E77083bDACD350d6b6d1",
+        celoLockedGold: "0x3DB0F0850c5b5f42fe30d68778C8958fC5EE7951",
+        celoElection: "0xeB8B626f3A76174f4576bb47429c47EfDED7C211",
+        celoValidators: "0x5E7b295bd8D80625e2cCac97C98123aaEB5E7Ea5",
     },
     592: {
         name: "astarMainnet",

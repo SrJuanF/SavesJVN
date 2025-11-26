@@ -8,7 +8,7 @@ rm -rf Onchain/.git && \
 git rm --cached -rf Onchain && \
 git add Ahorro-JVN && \
 git add Onchain 
-git commit -m "proxys-fit deploy"
+git commit -m "CeloStaking Protocol Deployment"
 git push -u origin main
 */
 
