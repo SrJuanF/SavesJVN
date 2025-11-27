@@ -239,7 +239,7 @@ contract StakingCelo is Ownable, ReentrancyGuard {
         require(ok, "Election.vote revert");
         emit Staked(msg.sender, group, value);
 
-        bool activableBalance = activableBalance(group);
+        activableBalance(group);
     }
 
     function unstake(address group,uint256 value,address lesser,address greater,uint256 index) external nonReentrant{
@@ -271,6 +271,7 @@ contract StakingCelo is Ownable, ReentrancyGuard {
             require(activeRevoked, "ELECTION.revokeActive revert");
             emit UnstakedActive(msg.sender, group, remaining, index);
         }
+        activableBalance(group);
     }
 
     //********GETTERS********** */

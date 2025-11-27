@@ -8,7 +8,7 @@ rm -rf Onchain/.git && \
 git rm --cached -rf Onchain && \
 git add Ahorro-JVN && \
 git add Onchain 
-git commit -m "CeloStaking Protocol Deployment"
+git commit -m "CeloStaking Protocol Frontend"
 git push -u origin main
 */
 
