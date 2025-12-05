@@ -21,7 +21,6 @@ import {
   useStakingManagerWrites,
 } from "@/hooks/contracts/CeloStaking/celo_staking";
 
-
 type Validator = { address: Address; signer: Address };
 type Group = {
   address: Address;
@@ -46,6 +45,7 @@ function eqAddress(a: Address, b: Address) {
 
 export function useCeloStaking() {
   const { chainId, userAddress, authenticated } = useAuth();
+  const publicClient = usePublicClient();
   const { lockedGold, election, validators } = getCoreAddresses(chainId);
   // State Variables
   const [state, setState] = useState<{
@@ -102,10 +102,10 @@ export function useCeloStaking() {
       votes.data.length < 2 ||
       votes.status !== "success"
     ) {
-      throw new Error("Error al obtener votos de grupos elegibles");
+      throw new Error("Error fetching votes for eligible groups");
     }
     if (!Locked.data || Locked.status !== "success") {
-      throw new Error("Error al obtener el total de gold bloqueado");
+      throw new Error("Error fetching total locked gold");
     }
 
     const eligibleGroups = votes.data[0];
@@ -192,21 +192,6 @@ export function useCeloStaking() {
   };
 
   //Read Functions
-  const getBalanceUser = Staking_getBalance(userAddress as Address, authenticated);
-  useEffect(() => {
-    if (!getBalanceUser.data) return;
-    const result = {
-      locked: ethers.utils.formatEther(getBalanceUser.data.locked),
-      unlocking: ethers.utils.formatEther(getBalanceUser.data.unlocking),
-      staked: ethers.utils.formatEther(getBalanceUser.data.staked),
-      withdrawed: ethers.utils.formatEther(getBalanceUser.data.withdrawed),
-    }
-    setUserBalance(result);
-  }, [getBalanceUser.data]);
-
-  const epochNumber = Election_getEpochNumber(election, authenticated);
-  const unlockingPeriod = LockedGold_unlockingPeriod(lockedGold, authenticated);
-
   const registeredValidators = Validators_getRegisteredValidators(
     validators,
     authenticated
@@ -230,9 +215,7 @@ export function useCeloStaking() {
         const details = await fetchValidatorDetails(addrs as Address[]);
         if (cancelled) return;
         if (addrs.length !== details.length) {
-          setErrors(
-            "El tamaño de la lista de validadores y sus detalles no coincide"
-          );
+          setErrors("Validator list size does not match details size");
         }
         // Procesar lista de validadores para crear el mapa de grupos
         const groups: GroupMap = {};
@@ -288,7 +271,7 @@ export function useCeloStaking() {
         });
       } catch (e: any) {
         if (cancelled) return;
-        setErrors(e?.message || "Error obteniendo detalles de validadores");
+        setErrors(e?.message || "Error fetching validator details");
         setState({
           groups: [],
           addressToGroup: {},
@@ -302,9 +285,123 @@ export function useCeloStaking() {
     };
   }, [registeredValidators.data]);
 
+  const getBalanceUser = Staking_getBalance(
+    userAddress as Address,
+    authenticated
+  );
+  useEffect(() => {
+    if (!getBalanceUser.data) return;
+    const result = {
+      locked: ethers.utils.formatEther(getBalanceUser.data.locked),
+      unlocking: ethers.utils.formatEther(getBalanceUser.data.unlocking),
+      staked: ethers.utils.formatEther(getBalanceUser.data.staked),
+      withdrawed: ethers.utils.formatEther(getBalanceUser.data.withdrawed),
+    };
+    setUserBalance(result);
+  }, [getBalanceUser.data]);
+
+  const epochNumber = Election_getEpochNumber(election, authenticated);
+  const unlockingPeriod = LockedGold_unlockingPeriod(lockedGold, authenticated);
+
   //Write Functions
-  const { fastlock, unlock, withdraw, stake, unstake } = useStakingManagerWrites();
-  
+  const {
+    fastlock,
+    withdraw,
+    stake: stakeCelo,
+    unstake: unstakeCelo,
+  } = useStakingManagerWrites();
+
+  const [txConfirmation, setTxConfirmation] = useState<{
+    hash: Hex;
+    status: "success" | "reverted";
+  } | null>(null);
+
+  const TargetGroup =
+    chainId === 11142220 ? state.groups[0].address : ELECTION_GROUP_MAINNET;
+
+  const stake = async (amount: bigint) => {
+    try {
+      if (!publicClient) throw new Error("Public client is undefined");
+      if (!userBalance) throw new Error("User balance is undefined");
+      const locked = BigInt(userBalance.locked);
+
+      if (locked < amount) {
+        const unlocking = BigInt(userBalance.unlocking);
+        const amountB = amount - locked;
+        let auxAmount = amountB;
+        let amountRelock = 0n;
+        if (unlocking > 0n) {
+          amountRelock = unlocking > amountB ? amountB : unlocking;
+          auxAmount -= amountRelock;
+        }
+
+        const hash = await fastlock(amountRelock, auxAmount);
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        if (receipt.status === "reverted") {
+          setErrors("Fastlock transaction reverted");
+          return;
+        }
+        //setTxConfirmation({ hash, status: receipt.status });
+        setErrors(null);
+      }
+
+      const { lesser, greater } = findLesserAndGreaterAfterVote(
+        state.groups,
+        TargetGroup,
+        amount
+      );
+
+      const hashStake = await stakeCelo(TargetGroup, amount, lesser, greater);
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: hashStake,
+      });
+      if (receipt.status === "reverted") {
+        setErrors("Stake transaction reverted");
+        return;
+      }
+      setTxConfirmation({ hash: hashStake, status: receipt.status });
+      setErrors(null);
+    } catch (e: any) {
+      setErrors(e?.message || "Transaction failed");
+    }
+  };
+  const unstake = async (amount: bigint) => {
+    try {
+      if (!publicClient) throw new Error("Public client is undefined");
+      if (!userBalance) throw new Error("User balance is undefined");
+      const staked = BigInt(userBalance.staked);
+
+      if (staked < amount) {
+        setErrors("Unstake transaction reverted — amount greater than staked");
+        return;
+      }
+
+      const { lesser, greater } = findLesserAndGreaterAfterVote(
+        state.groups,
+        TargetGroup,
+        amount * -1n
+      );
+
+      const hashUnstake = await unstakeCelo(
+        TargetGroup,
+        amount,
+        lesser,
+        greater,
+        0n
+      );
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: hashUnstake,
+      });
+      if (receipt.status === "reverted") {
+        setErrors("Transaction unstake reverted");
+        return;
+      }
+      setTxConfirmation({ hash: hashUnstake, status: receipt.status });
+      setErrors(null);
+    } catch (e: any) {
+      setErrors(e?.message || "Transaction failed");
+    }
+  };
 
   return {
     state,
@@ -312,5 +409,8 @@ export function useCeloStaking() {
     userBalance,
     epochNumber,
     unlockingPeriod,
+    stake,
+    unstake,
+    txConfirmation,
   };
 }

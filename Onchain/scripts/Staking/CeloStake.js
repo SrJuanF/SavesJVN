@@ -364,7 +364,7 @@ async function main() {
   async function unstake(
     targetGroup,
     valueWei,
-    index = 0,
+    index = 0, // Indice en groupsVotedByAccount -> Lista de Grupos votados por un usuario
     groups
   ) {
 
