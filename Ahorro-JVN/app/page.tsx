@@ -9,9 +9,7 @@ export default function LandingPage() {
   const { ready } = useAuth();
 
   if (!ready) {
-    return (
-      <LoadingScreen />
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -22,57 +20,88 @@ export default function LandingPage() {
           <div className="inline-flex items-center justify-center rounded-2xl bg-white/5 px-6 py-6 border border-white/10 shadow-lg">
             <Image src="/logo.png" alt="Ahorro JVN" width={120} height={120} />
           </div>
-          <h1 className="mt-6 text-4xl md:text-5xl font-extrabold tracking-tight">Ahorro JVN</h1>
+          <h1 className="mt-6 text-4xl md:text-5xl font-extrabold tracking-tight">
+            Ahorro JVN
+          </h1>
           <p className="mt-4 text-gray-300 max-w-2xl mx-auto">
-            Plataforma de ahorro juvenil multi-chain con apoyo familiar y recompensas DeFi.
+            Multi-chain youth savings platform with family support and DeFi
+            rewards.
           </p>
           <p className="mt-2 text-gray-400 max-w-2xl mx-auto">
-            Crea tu plan, deposita cuando quieras y potencia tu ahorro con fondos de inversiones.
+            Create your plan, deposit anytime, and boost your savings with
+            investment funds.
           </p>
         </section>
 
         <section className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="rounded-xl border border-white/10 bg-white/5 p-6 shadow-md">
-            <h2 className="text-lg font-semibold">Creación de fondo</h2>
-            <p className="mt-2 text-sm text-gray-300">Define tu objetivo: pensión voluntaria o ahorro universitario.</p>
+            <h2 className="text-lg font-semibold">Fund creation</h2>
+            <p className="mt-2 text-sm text-gray-300">
+              Define your goal: voluntary pension or university savings.
+            </p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-6 shadow-md">
-            <h2 className="text-lg font-semibold">Depositar fondos</h2>
-            <p className="mt-2 text-sm text-gray-300">Aporta libremente en cualquier momento para hacer crecer tu fondo.</p>
+            <h2 className="text-lg font-semibold">Deposit funds</h2>
+            <p className="mt-2 text-sm text-gray-300">
+              Contribute freely at any time to grow your fund.
+            </p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-6 shadow-md">
-            <h2 className="text-lg font-semibold">Fondos de inversiones</h2>
-            <p className="mt-2 text-sm text-gray-300">Destina parte del saldo a estrategias que buscan rentabilidad.</p>
+            <h2 className="text-lg font-semibold">Investment funds</h2>
+            <p className="mt-2 text-sm text-gray-300">
+              Allocate part of the balance to strategies that seek returns.
+            </p>
           </div>
         </section>
 
         <section className="mt-12 rounded-2xl border border-white/10 bg-gradient-to-r from-purple-900/40 via-indigo-900/30 to-fuchsia-900/40 p-8 shadow-lg">
-          <h3 className="text-xl font-bold">Microaportes con nuestros partners</h3>
-          <p className="mt-2 text-gray-200">Por cada compra que realices con algunos de nuestros partners, puedes activar microaportes automáticos a tus fondos de ahorro.</p>
-          <p className="mt-1 text-gray-400 text-sm">Integra tus hábitos de consumo con tu ahorro sin fricciones.</p>
+          <h3 className="text-xl font-bold">
+            Micro-contributions with our partners
+          </h3>
+          <p className="mt-2 text-gray-200">
+            For every purchase you make with some of our partners, you can
+            enable automatic micro-contributions to your savings funds.
+          </p>
+          <p className="mt-1 text-gray-400 text-sm">
+            Integrate your consumption habits with your savings frictionlessly.
+          </p>
           <div className="mt-4 flex items-center gap-3 text-xs text-white/70">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">★</span>
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">◆</span>
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">●</span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
+              ★
+            </span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
+              ◆
+            </span>
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
+              ●
+            </span>
           </div>
         </section>
 
         <section className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-lg font-semibold">Redes y activos</h3>
-            <p className="mt-2 text-sm text-gray-300">cCOP (ERC-20) en Celo</p>
-            <p className="text-sm text-gray-300">ASTR (nativa) en Astar</p>
-            <p className="mt-2 text-xs text-gray-400">Operamos de forma segura y eficiente en entornos multi-chain.</p>
+            <h3 className="text-lg font-semibold">Networks and assets</h3>
+            <p className="mt-2 text-sm text-gray-300">cCOP (ERC-20) on Celo</p>
+            <p className="text-sm text-gray-300">ASTR (native) on Astar</p>
+            <p className="mt-2 text-xs text-gray-400">
+              We operate securely and efficiently in multi-chain environments.
+            </p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-            <h3 className="text-lg font-semibold">Acompañamiento familiar</h3>
-            <p className="mt-2 text-sm text-gray-300">Invita a familiares a apoyar tu objetivo y administrar beneficiarios.</p>
-            <p className="mt-2 text-xs text-gray-400">Transparencia y control de privilegios para staking y retiros.</p>
+            <h3 className="text-lg font-semibold">Family support</h3>
+            <p className="mt-2 text-sm text-gray-300">
+              Invite family to support your goal and manage beneficiaries.
+            </p>
+            <p className="mt-2 text-xs text-gray-400">
+              Transparency and privilege control for staking and withdrawals.
+            </p>
           </div>
         </section>
 
         <section className="mt-12 text-center">
-          <p className="text-gray-300">Conecta tu wallet y/o correo desde la barra superior para comenzar.</p>
+          <p className="text-gray-300">
+            Connect your wallet and/or email from the top bar to get started.
+          </p>
         </section>
       </main>
     </div>
