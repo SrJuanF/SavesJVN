@@ -271,6 +271,12 @@ contract StakingCelo is Ownable, ReentrancyGuard {
             require(activeRevoked, "ELECTION.revokeActive revert");
             emit UnstakedActive(msg.sender, group, remaining, index);
         }
+
+        user.locked -= value;
+        user.unlocking += value;
+        LOCKED_GOLD.unlock(value);
+        emit Unlocked(msg.sender, value);
+
         activableBalance(group);
     }
 

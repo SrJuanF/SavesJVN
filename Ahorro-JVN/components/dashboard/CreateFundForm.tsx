@@ -74,7 +74,7 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
       reset();
       onSuccess?.();
     } catch (err: any) {
-      setErrorMsg(err?.message || "Error inesperado");
+      setErrorMsg(err?.message || "Unexpected error");
     } finally {
       setLoading(false);
     }
@@ -83,28 +83,28 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-4">
       <div>
-        <label>Tipo de fondo</label>
+        <label>Fund type</label>
         <select
-          {...register("type", { required: "Tipo obligatorio" })}
+          {...register("type", { required: "Type is required" })}
           className="mt-1 w-full rounded-md bg-black/30 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary p-2"
         >
-          <option value="">Selecciona tipo</option>
-          <option value="pension">Pensión voluntaria</option>
-          <option value="universitario">Ahorro universitario</option>
+          <option value="">Select type</option>
+          <option value="pension">Voluntary pension</option>
+          <option value="universitario">University savings</option>
         </select>
         {errors.type && <p className="text-red-400">{errors.type.message}</p>}
       </div>
       <div>
-        <label>Duración (años - notación decimal)</label>
+        <label>Duration (years - decimal notation)</label>
         <input
           type="number"
           step="0.1"
           {...register("durationYears", {
-            required: "Duración obligatoria",
+            required: "Duration is required",
             validate: (value) => {
               const val = Number(value);
               if (type === "pension" && val < 5)
-                return "La pensión requiere mínimo 5 años";
+                return "Pension requires at least 5 years";
               //if (type === "universitario" && val <= 0) return "La duración debe ser mayor a 0";
               return true;
             },
@@ -124,19 +124,19 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
       </div>
       <div>
         <div className="flex items-center gap-2">
-          <label>Wallets con permisos (max 4)</label>
+          <label>Privileged wallets (max 4)</label>
           <div className="relative group">
             <div className="h-4 w-4 rounded-sm border border-white/20 bg-white/10 flex items-center justify-center text-[10px] cursor-help">
               i
             </div>
             <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/20 bg-black/80 px-2 py-1 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100">
-              Permisos de Deposito, Inversiones y Retiro
+              Permissions for Deposit, Investments, and Withdrawal
             </div>
           </div>
-          <button type="button" className="ml-auto text-xs rounded-md px-2 py-1 border border-white/20 hover:bg-white/10" onClick={() => setShowCollabModal(true)}>Ver colaboradores</button>
+          <button type="button" className="ml-auto text-xs rounded-md px-2 py-1 border border-white/20 hover:bg-white/10" onClick={() => setShowCollabModal(true)}>View collaborators</button>
         </div>
         <div className="mt-2">
-          <p className="text-[11px] text-white/60">Usa "Ver colaboradores" para seleccionar hasta 4, o escribe manualmente</p>
+          <p className="text-[11px] text-white/60">Use "View collaborators" to select up to 4, or type manually</p>
         </div>
         <input
           type="text"
@@ -145,8 +145,8 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
             validate: (v) => {
               if (selectedPriv.length > 0) return true;
               const parts = (v || "").split(/[\s,]+/).filter(Boolean);
-              if (parts.length === 0) return "Wallets obligatorias";
-              if (parts.length > 4) return "Máximo 4 wallets";
+              if (parts.length === 0) return "Wallets are required";
+              if (parts.length > 4) return "Maximum 4 wallets";
               return true;
             },
           })}
@@ -158,18 +158,18 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
       </div>
       <div>
         <div className="flex items-center gap-2">
-          <label>Wallets Conectadas (max 4)</label>
+          <label>Connected wallets (max 4)</label>
           <div className="relative group">
             <div className="h-4 w-4 rounded-sm border border-white/20 bg-white/10 flex items-center justify-center text-[10px] cursor-help">
               i
             </div>
             <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md border border-white/20 bg-black/80 px-2 py-1 text-xs text-white shadow-lg opacity-0 group-hover:opacity-100">
-              Pueden ver el deposito en sus cuentas
+              They can see the deposit in their accounts
             </div>
           </div>
         </div>
         <div className="mt-2">
-          <p className="text-[11px] text-white/60">Usa "Ver colaboradores" para seleccionar hasta 4, o escribe manualmente</p>
+          <p className="text-[11px] text-white/60">Use "View collaborators" to select up to 4, or type manually</p>
         </div>
         <input
           type="text"
@@ -178,8 +178,8 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
             validate: (v) => {
               if (selectedBen.length > 0) return true;
               const parts = (v || "").split(/[\s,]+/).filter(Boolean);
-              if (parts.length === 0) return "Wallets obligatorias";
-              if (parts.length > 4) return "Máximo 4 wallets";
+              if (parts.length === 0) return "Wallets are required";
+              if (parts.length > 4) return "Maximum 4 wallets";
               return true;
             },
           })}
@@ -198,7 +198,7 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
         className="w-full h-10 rounded-md bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 font-semibold disabled:opacity-60"
         disabled={loading}
       >
-        {loading ? "Creando..." : "Crear fondo"}
+        {loading ? "Creating..." : "Create fund"}
       </button>
       {showCollabModal && (
         <div className="fixed inset-0 z-50">
@@ -206,12 +206,12 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 shadow-2xl flex flex-col max-h-[75vh] overflow-hidden">
               <div className="flex items-center justify-between p-3 border-b border-white/10">
-                <h3 className="text-sm font-bold">Colaboradores</h3>
-                <button className="rounded-md px-2 py-1 text-xs border border-white/20 hover:bg-white/10" onClick={() => setShowCollabModal(false)}>Cerrar</button>
+                <h3 className="text-sm font-bold">Collaborators</h3>
+                <button className="rounded-md px-2 py-1 text-xs border border-white/20 hover:bg-white/10" onClick={() => setShowCollabModal(false)}>Close</button>
               </div>
               <div className="flex-1 overflow-y-auto p-3">
                 {(!collaborators || collaborators.length === 0) ? (
-                  <p className="text-white/70 text-xs">Sin colaboradores relacionados.</p>
+                  <p className="text-white/70 text-xs">No related collaborators.</p>
                 ) : (
                   <ul className="space-y-2">
                     {collaborators.map((addr, idx) => (
@@ -219,17 +219,17 @@ export const CreateFundForm = ({ onSuccess, collaborators = [] }: CreateFundForm
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center text-[10px] font-bold">{idx + 1}</div>
                           <div>
-                            <p className="text-xs font-semibold">{`Colaborador ${idx + 1}`}</p>
+                            <p className="text-xs font-semibold">{`Collaborator ${idx + 1}`}</p>
                             <p className="text-[11px] text-white/70 break-all">{addr}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <button type="button" className="text-[11px] rounded-md px-2 py-1 border border-white/20 hover:bg-white/10" onClick={() => {
                             setSelectedPriv((prev) => (prev.includes(addr) ? prev : prev.length < 4 ? [...prev, addr] : prev));
-                          }}>Añadir a permisos</button>
+                          }}>Add to permissions</button>
                           <button type="button" className="text-[11px] rounded-md px-2 py-1 border border-white/20 hover:bg-white/10" onClick={() => {
                             setSelectedBen((prev) => (prev.includes(addr) ? prev : prev.length < 4 ? [...prev, addr] : prev));
-                          }}>Añadir a conectadas</button>
+                          }}>Add to connected</button>
                         </div>
                       </li>
                     ))}

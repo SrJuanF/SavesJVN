@@ -288,7 +288,7 @@ async function main() {
       return { groups: {}, totalLocked: 0n, totalVotes: 0n };
     }
   }
-   // Calcula lesser/greater suponiendo que se emitirá un voto adicional (voteWeight) para targetGroup
+  // Calcula lesser/greater suponiendo que se emitirá un voto adicional (voteWeight) para targetGroup
   function findLesserAndGreaterAfterVote(groupsArr, targetGroup, voteWeight) {
     const sortedGroups = [...groupsArr].sort((a, b) => {
       if (a.votes === b.votes) return 0;

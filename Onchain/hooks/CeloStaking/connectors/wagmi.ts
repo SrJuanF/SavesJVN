@@ -24,7 +24,8 @@ const CELO_ADDRESSES: Record<number, AddressMap> = {
     validators: "0x5E7b295bd8D80625e2cCac97C98123aaEB5E7Ea5",
   },
 };
-const MANAGER_STAKING = "0xCc5c9008d1d8ec5f01d3E66F125a8cEFB6A5Ed26";
+const MANAGER_STAKING = "0x0d2622497c5752054165810A4Fcb3eaFa528CC1a";
+const ELECTION_GROUP_MAINNET = "0xd42Bb7FE32cDf68045f49553c6f851fD2c58B6a9";
 
 function getCoreAddresses(chainId: number) {
   const cfg = CELO_ADDRESSES[chainId];

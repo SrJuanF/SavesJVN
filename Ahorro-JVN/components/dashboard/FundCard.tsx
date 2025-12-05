@@ -111,20 +111,24 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
         onClick={() => setShowModal(true)}
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-extrabold text-lg">Fondo #{String(fundId)}</h3>
+          <h3 className="font-extrabold text-lg">Fund #{String(fundId)}</h3>
           <span className="text-xs px-2 py-1 rounded-md border border-white/20 bg-white/10">
-            {detail.fundType === 0 ? "Pensión" : "Universitario"}
+            {detail.fundType === 0 ? "Pension" : "University"}
           </span>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
           <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-            <p className="text-white/70">Saldo</p>
-            <p className="text-lg font-bold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">{balanceDisplay}</p>
+            <p className="text-white/70">Balance</p>
+            <p className="text-lg font-bold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
+              {balanceDisplay}
+            </p>
             <span className="text-xs text-white/70">{currencySymbol}</span>
           </div>
           <div className="rounded-xl border border-white/10 bg-black/20 p-3">
             <p className="text-white/70">Stake</p>
-            <p className="text-lg font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">{stakeDisplay}</p>
+            <p className="text-lg font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+              {stakeDisplay}
+            </p>
           </div>
         </div>
         <div className="mt-4 text-xs text-white/70 flex items-center gap-2">
@@ -133,7 +137,7 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
           <span>{endStr}</span>
         </div>
         <div className="mt-2 text-xs font-semibold text-emerald-300">
-          Rendimiento estimado: {earns}%
+          Estimated return: {earns}%
         </div>
       </div>
 
@@ -143,20 +147,32 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <h3 className="text-lg font-bold">Fondo #{String(fundId)}</h3>
-                <button className="rounded-md px-2 py-1 text-sm border border-white/20 hover:bg-white/10" onClick={() => setShowModal(false)}>Cerrar</button>
+                <h3 className="text-lg font-bold">Fund #{String(fundId)}</h3>
+                <button
+                  className="rounded-md px-2 py-1 text-sm border border-white/20 hover:bg-white/10"
+                  onClick={() => setShowModal(false)}
+                >
+                  Close
+                </button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <FundDetailsPanel fundId={fundId} detail={detail} startStr={startStr} endStr={endStr} collaborators={collaborators} currencySymbol={currencySymbol} />
+                <FundDetailsPanel
+                  fundId={fundId}
+                  detail={detail}
+                  startStr={startStr}
+                  endStr={endStr}
+                  collaborators={collaborators}
+                  currencySymbol={currencySymbol}
+                />
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold">Pago con QR</p>
+                    <p className="text-sm font-semibold">Pay with QR</p>
                     <div className="flex items-center gap-2">
                       <button
                         className="rounded-md px-3 h-9 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold"
                         onClick={() => setShowQR((x) => !x)}
                       >
-                        {showQR ? "Ocultar QR" : "Mostrar QR"}
+                        {showQR ? "Hide QR" : "Show QR"}
                       </button>
                       <a
                         href={checkoutUrl}
@@ -164,15 +180,17 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
                         rel="noopener noreferrer"
                         className="rounded-md px-3 h-9 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white font-semibold flex items-center"
                       >
-                        Analizar
+                        Analyze
                       </a>
                     </div>
                   </div>
                   {showQR && (
                     <div className="mt-3 flex items-center justify-center">
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(checkoutUrl)}`}
-                        alt="QR de pago"
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+                          checkoutUrl
+                        )}`}
+                        alt="Payment QR"
                         className="rounded-md border border-white/10"
                         width={220}
                         height={220}
@@ -180,21 +198,25 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
                     </div>
                   )}
                 </div>
-                
+
                 <div>
-                  <label className="text-sm">Wallet para retiro</label>
+                  <label className="text-sm">Wallet for withdrawal</label>
                   <select
                     value={withdrawToAddr ?? ""}
                     onChange={(e) => setWithdrawToAddr(e.target.value || null)}
                     className="mt-1 w-full rounded-md bg-black/30 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-primary p-2"
                   >
                     {withdrawOptions.length === 0 ? (
-                      <option value="">Sin colaboradores</option>
+                      <option value="">No collaborators</option>
                     ) : (
                       withdrawOptions.map((addr, i) => {
-                        const label = labelForAddr(addr) ?? `Colaborador ${i + 1}`;
+                        const label =
+                          labelForAddr(addr) ?? `Collaborator ${i + 1}`;
                         return (
-                          <option key={`w-${i}`} value={String(addr)}>{`${label} - ${String(addr)}`}</option>
+                          <option
+                            key={`w-${i}`}
+                            value={String(addr)}
+                          >{`${label} - ${String(addr)}`}</option>
                         );
                       })
                     )}
@@ -206,16 +228,38 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
                     min={0}
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Monto"
+                    placeholder="Amount"
                     step="any"
                     className="flex-1 rounded-md bg-black/30 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary p-2"
                   />
-                  <span className="px-2 py-1 rounded-md border border-white/20 bg-white/10 text-sm">{currencySymbol}</span>
+                  <span className="px-2 py-1 rounded-md border border-white/20 bg-white/10 text-sm">
+                    {currencySymbol}
+                  </span>
                 </div>
                 <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <button className="w-full h-10 rounded-md bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold shadow-glow disabled:opacity-60" onClick={deposit} disabled={loading !== null}>{loading === "deposit" ? "Depositando..." : "Depositar"}</button>
-                  <button className="w-full h-10 rounded-md bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white font-semibold shadow-glow disabled:opacity-60" onClick={stake} disabled={loading !== null}>{loading === "stake" ? "Staking..." : "Stake"}</button>
-                  <button className="w-full h-10 rounded-md bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-700 hover:to-red-700 text-white font-semibold shadow-glow disabled:opacity-60" onClick={withdraw} disabled={loading !== null || !canWithdraw || !withdrawToAddr}>{loading === "withdraw" ? "Retirando..." : "Retirar"}</button>
+                  <button
+                    className="w-full h-10 rounded-md bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-semibold shadow-glow disabled:opacity-60"
+                    onClick={deposit}
+                    disabled={loading !== null}
+                  >
+                    {loading === "deposit" ? "Depositing..." : "Deposit"}
+                  </button>
+                  <button
+                    className="w-full h-10 rounded-md bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white font-semibold shadow-glow disabled:opacity-60"
+                    onClick={stake}
+                    disabled={loading !== null}
+                  >
+                    {loading === "stake" ? "Staking..." : "Stake"}
+                  </button>
+                  <button
+                    className="w-full h-10 rounded-md bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-700 hover:to-red-700 text-white font-semibold shadow-glow disabled:opacity-60"
+                    onClick={withdraw}
+                    disabled={
+                      loading !== null || !canWithdraw || !withdrawToAddr
+                    }
+                  >
+                    {loading === "withdraw" ? "Withdrawing..." : "Withdraw"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -251,44 +295,52 @@ const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = []
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <p className="text-white/70 text-xs">Saldo</p>
-          <p className="text-xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">{balanceDisplay}</p>
+          <p className="text-white/70 text-xs">Balance</p>
+          <p className="text-xl font-extrabold bg-gradient-to-r from-secondary to-primary bg-clip-text text-transparent">
+            {balanceDisplay}
+          </p>
           <span className="text-xs text-white/70">{currencySymbol}</span>
         </div>
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
           <p className="text-white/70 text-xs">Stake</p>
-          <p className="text-xl font-extrabold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">{stakeDisplay}</p>
+          <p className="text-xl font-extrabold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+            {stakeDisplay}
+          </p>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 mt-2">
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
-          <p className="text-emerald-200 text-xs">Rendimiento estimado</p>
+          <p className="text-emerald-200 text-xs">Estimated return</p>
           <p className="text-xl font-extrabold text-emerald-300">{earns}%</p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <p className="text-white/70">Inicio</p>
+          <p className="text-white/70">Start</p>
           <p className="font-semibold">{startStr}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <p className="text-white/70">Fin</p>
+          <p className="text-white/70">End</p>
           <p className="font-semibold">{endStr}</p>
         </div>
       </div>
       <div className="rounded-xl border border-white/10 bg-black/20 p-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
           <div>
-            <p className="text-white/70">Propietario</p>
+            <p className="text-white/70">Owner</p>
             <p className="font-semibold break-all">{String(detail.owner)}</p>
           </div>
           <div>
-            <p className="text-white/70">Tipo</p>
-            <p className="font-semibold">{detail.fundType === 0 ? "Pensión" : "Universitario"}</p>
+            <p className="text-white/70">Type</p>
+            <p className="font-semibold">
+              {detail.fundType === 0 ? "Pension" : "University"}
+            </p>
           </div>
           <div>
-            <p className="text-white/70">Estado</p>
-            <p className="font-semibold">{detail.active ? "Activo" : "Inactivo"}</p>
+            <p className="text-white/70">Status</p>
+            <p className="font-semibold">
+              {detail.active ? "Active" : "Inactive"}
+            </p>
           </div>
           <div>
             <p className="text-white/70">ID</p>
@@ -297,12 +349,15 @@ const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = []
         </div>
         {privilegedList.length > 0 && (
           <div className="mt-3">
-            <p className="text-white/70 text-xs mb-2">Con permisos</p>
+            <p className="text-white/70 text-xs mb-2">Privileged</p>
             <div className="flex flex-wrap gap-2">
               {privilegedList.map((addr, i) => {
                 const label = labelForAddr(addr);
                 return (
-                  <span key={`p-${i}`} className="text-[10px] rounded-md px-2 py-1 border border-white/20 bg-white/10 break-all">
+                  <span
+                    key={`p-${i}`}
+                    className="text-[10px] rounded-md px-2 py-1 border border-white/20 bg-white/10 break-all"
+                  >
                     {label ? `${label} - ${String(addr)}` : String(addr)}
                   </span>
                 );
@@ -312,12 +367,15 @@ const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = []
         )}
         {beneficiariesList.length > 0 && (
           <div className="mt-3">
-            <p className="text-white/70 text-xs mb-2">Conectados</p>
+            <p className="text-white/70 text-xs mb-2">Connected</p>
             <div className="flex flex-wrap gap-2">
               {beneficiariesList.map((addr, i) => {
                 const label = labelForAddr(addr);
                 return (
-                  <span key={`b-${i}`} className="text-[10px] rounded-md px-2 py-1 border border-white/20 bg-white/10 break-all">
+                  <span
+                    key={`b-${i}`}
+                    className="text-[10px] rounded-md px-2 py-1 border border-white/20 bg-white/10 break-all"
+                  >
                     {label ? `${label} - ${String(addr)}` : String(addr)}
                   </span>
                 );

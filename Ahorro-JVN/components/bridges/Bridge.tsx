@@ -131,7 +131,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
     const assetTo = (keepSameAsset ? assetFrom : selectedAssetTo?.symbol || "-");
     const actionStr = actionOnArrival === "deposit" ? "Depositar" : "Invertir";
     setResultMsg(
-      `Bridge simulado: ${amount} ${assetFrom} desde ${originName} hacia ${destName}. Activo destino: ${assetTo}. Acción: ${actionStr}.`
+      `Simulated bridge: ${amount} ${assetFrom} from ${originName} to ${destName}. Destination asset: ${assetTo}. Action: ${actionStr}.`
     );
     setProcessing(false);
   };
@@ -142,8 +142,13 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl text-white flex flex-col max-h-[85vh] overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <h3 className="text-lg font-bold">Bridge de Activos</h3>
-            <button className="rounded-md px-2 py-1 text-sm border border-white/20 hover:bg-white/10" onClick={() => !processing && onClose()}>Cerrar</button>
+            <h3 className="text-lg font-bold">Asset Bridge</h3>
+            <button
+              className="rounded-md px-2 py-1 text-sm border border-white/20 hover:bg-white/10"
+              onClick={() => !processing && onClose()}
+            >
+              Close
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -151,27 +156,33 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
               <div className="flex items-center gap-3">
                 <Megaphone className="h-5 w-5 text-pink-400" />
                 <div className="space-y-1">
-                  <p className="font-extrabold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">Incoming Relayers Nodes on Astar y Celo</p>
-                  <p className="text-white/90">Próximamente: bridging avanzado entre redes del ecosistema.</p>
+                  <p className="font-extrabold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+                    Incoming Relayers Nodes on Astar and Celo
+                  </p>
+                  <p className="text-white/90">
+                    Coming soon: advanced bridging across ecosystem networks.
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="rounded-xl border border-white/10 bg-white/10 p-3">
-                <p className="text-white/70 text-xs">Red Origen</p>
+                <p className="text-white/70 text-xs">Origin Network</p>
                 <select
                   value={originChainId ?? ""}
                   onChange={(e) => setOriginChainId(Number(e.target.value))}
                   className="mt-1 w-full rounded-md bg-black/30 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-primary p-2"
                 >
                   {chains.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/10 p-3">
-                <p className="text-white/70 text-xs">Red Destino</p>
+                <p className="text-white/70 text-xs">Destination Network</p>
                 <select
                   value={destChainId ?? ""}
                   onChange={(e) => setDestChainId(Number(e.target.value))}
@@ -200,7 +211,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-              <p className="text-sm font-semibold">Activo de Origen</p>
+              <p className="text-sm font-semibold">Origin Asset</p>
               <div className="mt-2 relative">
                 <button
                   onClick={() => setShowFromList((v) => !v)}
@@ -210,13 +221,15 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
                     <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
                       {selectedAssetFrom?.symbol?.slice(0, 2) ?? "-"}
                     </span>
-                    <span className="text-sm">{selectedAssetFrom?.name ?? "Selecciona activo"}</span>
+                    <span className="text-sm">
+                      {selectedAssetFrom?.name ?? "Select asset"}
+                    </span>
                   </span>
                   <span className="text-xs text-white/60">▼</span>
                 </button>
                 {showFromList && (
                   <div className="absolute z-10 mt-2 w-full rounded-md border border-white/10 bg-black/60 shadow-2xl">
-                    <div className="px-3 pt-2 text-[11px] text-white/70">Nativas</div>
+                    <div className="px-3 pt-2 text-[11px] text-white/70">Natives</div>
                     {ASSETS_CATALOG.filter((x) => x.type === "native").map((a, idx) => (
                       <button
                         key={`native-${a.symbol}-${idx}`}
@@ -230,23 +243,33 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
                       </button>
                     ))}
                     <div className="border-t border-white/10" />
-                    <div className="px-3 pt-2 text-[11px] text-white/70">Tokens ERC20</div>
-                    {ASSETS_CATALOG.filter((x) => x.type === "erc20").map((a, idx) => (
-                      <button
-                        key={`erc20-${a.symbol}-${idx}`}
-                        onClick={() => {
-                          const addr = a.addressesByChain?.[originChainId ?? -1] ?? null;
-                          setSelectedAssetFrom({ type: a.type, symbol: a.symbol, name: a.name, address: addr });
-                          setShowFromList(false);
-                        }}
-                        className="w-full flex items-center gap-2 p-2 hover:bg-gray-700"
-                      >
-                        <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
-                          {a.symbol.slice(0, 2)}
-                        </span>
-                        <span className="text-sm">{a.name}</span>
-                      </button>
-                    ))}
+                    <div className="px-3 pt-2 text-[11px] text-white/70">
+                      ERC20 Tokens
+                    </div>
+                    {ASSETS_CATALOG.filter((x) => x.type === "erc20").map(
+                      (a, idx) => (
+                        <button
+                          key={`erc20-${a.symbol}-${idx}`}
+                          onClick={() => {
+                            const addr =
+                              a.addressesByChain?.[originChainId ?? -1] ?? null;
+                            setSelectedAssetFrom({
+                              type: a.type,
+                              symbol: a.symbol,
+                              name: a.name,
+                              address: addr,
+                            });
+                            setShowFromList(false);
+                          }}
+                          className="w-full flex items-center gap-2 p-2 hover:bg-gray-700"
+                        >
+                          <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
+                            {a.symbol.slice(0, 2)}
+                          </span>
+                          <span className="text-sm">{a.name}</span>
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </div>
@@ -254,7 +277,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
 
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold">Activo de Destino</p>
+                <p className="text-sm font-semibold">Destination Asset</p>
                 <label className="flex items-center gap-2 text-xs">
                   <input
                     type="checkbox"
@@ -262,7 +285,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
                     onChange={(e) => setKeepSameAsset(e.target.checked)}
                     className="rounded border-white/20 bg-black/30"
                   />
-                  Mantener mismo activo
+                  Keep same asset
                 </label>
               </div>
               {!keepSameAsset && (
@@ -275,43 +298,67 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
                       <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
                         {selectedAssetTo?.symbol?.slice(0, 2) ?? "-"}
                       </span>
-                      <span className="text-sm">{selectedAssetTo?.name ?? "Selecciona activo"}</span>
+                      <span className="text-sm">
+                        {selectedAssetTo?.name ?? "Select asset"}
+                      </span>
                     </span>
                     <span className="text-xs text-white/60">▼</span>
                   </button>
                   {showToList && (
                     <div className="absolute z-10 mt-2 w-full rounded-md border border-white/10 bg-black/60 shadow-2xl">
-                      <div className="px-3 pt-2 text-[11px] text-white/70">Nativas</div>
-                      {ASSETS_CATALOG.filter((x) => x.type === "native").map((a, idx) => (
-                        <button
-                          key={`native-to-${a.symbol}-${idx}`}
-                          onClick={() => { setSelectedAssetTo({ type: a.type, symbol: a.symbol, name: a.name, address: null }); setShowToList(false); }}
-                          className="w-full flex items-center gap-2 p-2 hover:bg-gray-700"
-                        >
-                          <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
-                            {a.symbol.slice(0, 2)}
-                          </span>
-                          <span className="text-sm">{a.name}</span>
-                        </button>
-                      ))}
+                      <div className="px-3 pt-2 text-[11px] text-white/70">
+                        Native
+                      </div>
+                      {ASSETS_CATALOG.filter((x) => x.type === "native").map(
+                        (a, idx) => (
+                          <button
+                            key={`native-to-${a.symbol}-${idx}`}
+                            onClick={() => {
+                              setSelectedAssetTo({
+                                type: a.type,
+                                symbol: a.symbol,
+                                name: a.name,
+                                address: null,
+                              });
+                              setShowToList(false);
+                            }}
+                            className="w-full flex items-center gap-2 p-2 hover:bg-gray-700"
+                          >
+                            <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
+                              {a.symbol.slice(0, 2)}
+                            </span>
+                            <span className="text-sm">{a.name}</span>
+                          </button>
+                        )
+                      )}
                       <div className="border-t border-white/10" />
-                      <div className="px-3 pt-2 text-[11px] text-white/70">Tokens ERC20</div>
-                      {ASSETS_CATALOG.filter((x) => x.type === "erc20").map((a, idx) => (
-                        <button
-                          key={`erc20-to-${a.symbol}-${idx}`}
-                          onClick={() => {
-                            const addr = a.addressesByChain?.[destChainId ?? -1] ?? null;
-                            setSelectedAssetTo({ type: a.type, symbol: a.symbol, name: a.name, address: addr });
-                            setShowToList(false);
-                          }}
-                          className="w-full flex items-center gap-2 p-2 hover:bg-gray-700"
-                        >
-                          <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
-                            {a.symbol.slice(0, 2)}
-                          </span>
-                          <span className="text-sm">{a.name}</span>
-                        </button>
-                      ))}
+                      <div className="px-3 pt-2 text-[11px] text-white/70">
+                        ERC20 Tokens
+                      </div>
+                      {ASSETS_CATALOG.filter((x) => x.type === "erc20").map(
+                        (a, idx) => (
+                          <button
+                            key={`erc20-to-${a.symbol}-${idx}`}
+                            onClick={() => {
+                              const addr =
+                                a.addressesByChain?.[destChainId ?? -1] ?? null;
+                              setSelectedAssetTo({
+                                type: a.type,
+                                symbol: a.symbol,
+                                name: a.name,
+                                address: addr,
+                              });
+                              setShowToList(false);
+                            }}
+                            className="w-full flex items-center gap-2 p-2 hover:bg-gray-700"
+                          >
+                            <span className="h-6 w-6 rounded-full bg-gradient-to-br from-primary to-pink-500 text-[10px] flex items-center justify-center font-bold">
+                              {a.symbol.slice(0, 2)}
+                            </span>
+                            <span className="text-sm">{a.name}</span>
+                          </button>
+                        )
+                      )}
                     </div>
                   )}
                 </div>
@@ -320,7 +367,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="rounded-xl border border-white/10 bg-white/10 p-3">
-                <p className="text-white/70 text-xs">Monto</p>
+                <p className="text-white/70 text-xs">Amount</p>
                 <input
                   type="number"
                   min={0}
@@ -332,7 +379,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
                 />
               </div>
               <div className="rounded-xl border border-white/10 bg-white/10 p-3">
-                <p className="text-white/70 text-xs">Acción al llegar</p>
+                <p className="text-white/70 text-xs">Action on arrival</p>
                 <div className="mt-1 flex items-center gap-4">
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -342,7 +389,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
                       onChange={() => setActionOnArrival("deposit")}
                       className="rounded border-white/20 bg-black/30"
                     />
-                    Depositar
+                    Deposit
                   </label>
                   <label className="flex items-center gap-2 text-sm">
                     <input
@@ -352,7 +399,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
                       onChange={() => setActionOnArrival("invest")}
                       className="rounded border-white/20 bg-black/30"
                     />
-                    Invertir
+                    Invest
                   </label>
                 </div>
               </div>
@@ -371,7 +418,7 @@ type AssetItem = { type: "native" | "erc20"; symbol: string; name: string; addre
               onClick={simulateBridge}
               disabled={!canBridge() || processing}
             >
-              {processing ? "Procesando..." : "Bridge"}
+              {processing ? "Processing..." : "Bridge"}
             </button>
           </div>
         </div>

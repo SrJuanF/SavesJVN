@@ -8,24 +8,25 @@ import {
 } from "./abi";
 
 type AddressMap = {
-  lockedGold: string;
-  election: string;
-  validators: string;
+  lockedGold: Address;
+  election: Address;
+  validators: Address;
 };
 
 const CELO_ADDRESSES: Record<number, AddressMap> = {
   42220: {
-    lockedGold: "0x6cC083Aed9e3ebe302A6336dBC7c921C9f03349E",
-    election: "0x8D6677192144292870907E3Fa8A5527fE55A7ff6",
-    validators: "0xaEb865bCa93DdC8F47b8e29F40C5399cE34d0C58",
+    lockedGold: "0x6cC083Aed9e3ebe302A6336dBC7c921C9f03349E" as Address,
+    election: "0x8D6677192144292870907E3Fa8A5527fE55A7ff6" as Address,
+    validators: "0xaEb865bCa93DdC8F47b8e29F40C5399cE34d0C58" as Address,
   },
   11142220: {
-    lockedGold: "0x3DB0F0850c5b5f42fe30d68778C8958fC5EE7951",
-    election: "0xeB8B626f3A76174f4576bb47429c47EfDED7C211",
-    validators: "0x5E7b295bd8D80625e2cCac97C98123aaEB5E7Ea5",
+    lockedGold: "0x3DB0F0850c5b5f42fe30d68778C8958fC5EE7951" as Address,
+    election: "0xeB8B626f3A76174f4576bb47429c47EfDED7C211" as Address,
+    validators: "0x5E7b295bd8D80625e2cCac97C98123aaEB5E7Ea5" as Address,
   },
 };
-const MANAGER_STAKING = "0xCc5c9008d1d8ec5f01d3E66F125a8cEFB6A5Ed26";
+const MANAGER_STAKING = "0x0d2622497c5752054165810A4Fcb3eaFa528CC1a" as Address;
+export const ELECTION_GROUP_MAINNET = "0xd42Bb7FE32cDf68045f49553c6f851fD2c58B6a9" as Address;
 
 export function getCoreAddresses(chainId: number) {
   const cfg = CELO_ADDRESSES[chainId];
@@ -44,45 +45,6 @@ export function LockedGold_getTotalLockedGold(
     abi: LockedGoldAbi,
     functionName: "getTotalLockedGold",
     args: [],
-    query: { enabled },
-  }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
-}
-
-export function LockedGold_getAccountNonvotingLockedGold(
-  lockedGold: Address,
-  enabled: boolean = true
-) {
-  return useReadContract({
-    address: lockedGold,
-    abi: LockedGoldAbi,
-    functionName: "getAccountNonvotingLockedGold",
-    args: [MANAGER_STAKING as Address],
-    query: { enabled },
-  }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
-}
-
-export function LockedGold_getAccountTotalLockedGold(
-  lockedGold: Address,
-  enabled: boolean = true
-) {
-  return useReadContract({
-    address: lockedGold,
-    abi: LockedGoldAbi,
-    functionName: "getAccountTotalLockedGold",
-    args: [MANAGER_STAKING as Address],
-    query: { enabled },
-  }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
-}
-
-export function LockedGold_getTotalPendingWithdrawals(
-  lockedGold: Address,
-  enabled: boolean = true
-) {
-  return useReadContract({
-    address: lockedGold,
-    abi: LockedGoldAbi,
-    functionName: "getTotalPendingWithdrawals",
-    args: [MANAGER_STAKING as Address],
     query: { enabled },
   }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
 }
@@ -117,48 +79,6 @@ export function Election_getTotalVotesForEligibleValidatorGroups(
   >;
 }
 
-export function Election_getTotalVotesForGroupByAccount(
-  election: Address,
-  group: Address,
-  enabled: boolean = true
-) {
-  return useReadContract({
-    address: election,
-    abi: ElectionAbi,
-    functionName: "getTotalVotesForGroupByAccount",
-    args: [group, MANAGER_STAKING as Address],
-    query: { enabled },
-  }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
-}
-
-export function Election_getActiveVotesForGroupByAccount(
-  election: Address,
-  group: Address,
-  enabled: boolean = true
-) {
-  return useReadContract({
-    address: election,
-    abi: ElectionAbi,
-    functionName: "getActiveVotesForGroupByAccount",
-    args: [group, MANAGER_STAKING as Address],
-    query: { enabled },
-  }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
-}
-
-export function Election_getPendingVotesForGroupByAccount(
-  election: Address,
-  group: Address,
-  enabled: boolean = true
-) {
-  return useReadContract({
-    address: election,
-    abi: ElectionAbi,
-    functionName: "getPendingVotesForGroupByAccount",
-    args: [group, MANAGER_STAKING as Address],
-    query: { enabled },
-  }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
-}
-
 export function Election_getGroupEligibility(
   election: Address,
   group: Address,
@@ -184,7 +104,7 @@ export function Election_getActiveVotesForGroup(
     functionName: "getActiveVotesForGroup",
     args: [group],
     query: { enabled },
-  }) as { data: bigint | undefined } & ReturnType<typeof useReadContract>;
+  }) as { data: bigint } & ReturnType<typeof useReadContract>;
 }
 
 export function Election_getEpochNumber(
@@ -211,10 +131,18 @@ export const useElectionWrites = (election: Address) => {
         address: election,
         abi: ElectionAbi,
         functionName: "activateForAccount",
-        args: [group, MANAGER_STAKING as Address],
+        args: [group, MANAGER_STAKING],
       });
     },
   };
+};
+
+type ValidatorDetails = {
+  ecdsaPublicKey: Hex;
+  blsPublicKey: Hex;
+  affiliation: Address;
+  score: bigint;
+  signer: Address;
 };
 
 export function Validators_getRegisteredValidators(
@@ -232,18 +160,16 @@ export function Validators_getRegisteredValidators(
 
 export function Validators_getValidator(
   validators: Address,
-  account: Address,
+  validator: Address,
   enabled: boolean = true
 ) {
   return useReadContract({
     address: validators,
     abi: ValidatorsAbi,
     functionName: "getValidator",
-    args: [account],
+    args: [validator],
     query: { enabled },
-  }) as { data: [Hex, Hex, Address, bigint, Address] | undefined } & ReturnType<
-    typeof useReadContract
-  >;
+  }) as { data: ValidatorDetails | undefined } & ReturnType<typeof useReadContract>;
 }
 
 // STAKING MANAGER
@@ -257,7 +183,7 @@ export interface StakingBalance {
 
 export function Staking_getBalance(user: Address, enabled: boolean = true) {
   return useReadContract({
-    address: MANAGER_STAKING as Address,
+    address: MANAGER_STAKING,
     abi: StakingCeloAbi,
     functionName: "getBalance",
     args: [user],
@@ -269,7 +195,7 @@ export function Staking_getBalance(user: Address, enabled: boolean = true) {
 
 export const useStakingManagerWrites = () => {
   const { writeContractAsync, data, isPending, error } = useWriteContract();
-  const address = MANAGER_STAKING as Address;
+  const address = MANAGER_STAKING;
   return {
     data,
     isPending,
@@ -324,14 +250,6 @@ export const useStakingManagerWrites = () => {
         abi: StakingCeloAbi,
         functionName: "unstake",
         args: [group, valueWei, lesser, greater, index],
-      });
-    },
-    withdrawAllToOwner: async (): Promise<Hex> => {
-      return writeContractAsync({
-        address,
-        abi: StakingCeloAbi,
-        functionName: "withdrawAllToOwner",
-        args: [],
       });
     },
     activableBalance: async (group: Address): Promise<Hex> => {

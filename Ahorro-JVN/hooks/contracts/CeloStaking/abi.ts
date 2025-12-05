@@ -9,27 +9,6 @@ export const LockedGoldAbi: Abi = [
     outputs: [{ type: "uint256" }],
   },
   {
-    name: "getAccountNonvotingLockedGold",
-    type: "function",
-    stateMutability: "view",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ type: "uint256" }],
-  },
-  {
-    name: "getAccountTotalLockedGold",
-    type: "function",
-    stateMutability: "view",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ type: "uint256" }],
-  },
-  {
-    name: "getTotalPendingWithdrawals",
-    type: "function",
-    stateMutability: "view",
-    inputs: [{ name: "account", type: "address" }],
-    outputs: [{ type: "uint256" }],
-  },
-  {
     name: "unlockingPeriod",
     type: "function",
     stateMutability: "view",
@@ -45,36 +24,6 @@ export const ElectionAbi: Abi = [
     stateMutability: "view",
     inputs: [],
     outputs: [{ type: "address[]" }, { type: "uint256[]" }],
-  },
-  {
-    name: "getTotalVotesForGroupByAccount",
-    type: "function",
-    stateMutability: "view",
-    inputs: [
-      { name: "group", type: "address" },
-      { name: "account", type: "address" },
-    ],
-    outputs: [{ type: "uint256" }],
-  },
-  {
-    name: "getActiveVotesForGroupByAccount",
-    type: "function",
-    stateMutability: "view",
-    inputs: [
-      { name: "group", type: "address" },
-      { name: "account", type: "address" },
-    ],
-    outputs: [{ type: "uint256" }],
-  },
-  {
-    name: "getPendingVotesForGroupByAccount",
-    type: "function",
-    stateMutability: "view",
-    inputs: [
-      { name: "group", type: "address" },
-      { name: "account", type: "address" },
-    ],
-    outputs: [{ type: "uint256" }],
   },
   {
     name: "getGroupEligibility",
@@ -201,13 +150,6 @@ export const StakingCeloAbi: Abi = [
     type: "function",
     stateMutability: "nonpayable",
     inputs: [{ name: "_withdrawAmount", type: "uint256" }],
-    outputs: [],
-  },
-  {
-    name: "withdrawAllToOwner",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [],
     outputs: [],
   },
 ];
