@@ -18,10 +18,10 @@ export default function LandingPage() {
       <main className="max-w-6xl mx-auto px-6 pt-28 pb-20">
         <section className="text-center">
           <div className="inline-flex items-center justify-center rounded-2xl bg-white/5 px-6 py-6 border border-white/10 shadow-lg">
-            <Image src="/logo.png" alt="Ahorro JVN" width={120} height={120} />
+            <Image src="/logo.png" alt="Saves JVN" width={120} height={120} />
           </div>
           <h1 className="mt-6 text-4xl md:text-5xl font-extrabold tracking-tight">
-            Ahorro JVN
+            Saves JVN
           </h1>
           <p className="mt-4 text-gray-300 max-w-2xl mx-auto">
             Multi-chain youth savings platform with family support and DeFi
