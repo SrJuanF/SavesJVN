@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { utils as ethersUtils } from "ethers";
 import type { FundStruct } from "@/hooks/contracts/savesJVN";
 import { useSaves, ZERO_ADDRESS } from "@/hooks/core/use-saves";
+import { useCeloStaking } from "@/hooks/core/use-celo_staking";
 import { useAuth } from "@/hooks";
 
 type FundCardProps = {
@@ -13,41 +14,69 @@ type FundCardProps = {
   collaborators?: string[];
 };
 
-export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCardProps) => {
-  const { depositNative, depositToken, stakeASTR, withdrawToBeneficiary, tokenAddress, approveCCOP } = useSaves();
+export const FundCard = ({
+  fundId,
+  detail,
+  refresh,
+  collaborators = [],
+}: FundCardProps) => {
+  const {
+    depositNative,
+    depositToken,
+    stakeASTR,
+    withdrawToBeneficiary,
+    tokenAddress,
+    approveCCOP,
+  } = useSaves();
   const [amount, setAmount] = useState<string>("");
-  const [loading, setLoading] = useState<"deposit" | "stake" | "withdraw" | null>(null);
+  const [loading, setLoading] = useState<
+    "deposit" | "stake" | "withdraw" | null
+  >(null);
   const [showModal, setShowModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const canWithdraw = Number(detail.endTime) * 1000 <= Date.now();
-  const checkoutUrl = "https://app.monabit.io/checkout?collection_id=CHt32TEa5B0OOQyXKQ7k54";
+  const checkoutUrl =
+    "https://app.monabit.io/checkout?collection_id=CHt32TEa5B0OOQyXKQ7k54";
   const { chainId } = useAuth();
   const isCeloNet = chainId === 42220 || chainId === 11142220;
   const isShibuya = chainId === 81;
   const currencySymbol = isCeloNet ? "cCOP" : isShibuya ? "SBY" : "ASTR";
+  const { stake: stakeCelo, unstake: unstakeCelo } = useCeloStaking();
   const beneficiariesList = (Array.isArray(detail.beneficiaries) ? detail.beneficiaries : []).filter((a) => String(a) !== ZERO_ADDRESS);
-  const withdrawOptions = (collaborators && collaborators.length > 0 ? collaborators : beneficiariesList.map((a) => String(a)));
-  const [withdrawToAddr, setWithdrawToAddr] = useState<string | null>(withdrawOptions[0] ? String(withdrawOptions[0]) : null);
+  const withdrawOptions = collaborators && collaborators.length > 0 ? collaborators : beneficiariesList.map((a) => String(a));
+  const [withdrawToAddr, setWithdrawToAddr] = useState<string | null>(
+    withdrawOptions[0] ? String(withdrawOptions[0]) : null
+  );
   const labelForAddr = (addr: unknown) => {
     const a = String(addr || "");
     if (!a) return null;
-    const idx = collaborators.findIndex((x) => x.toLowerCase() === a.toLowerCase());
+    const idx = collaborators.findIndex(
+      (x) => x.toLowerCase() === a.toLowerCase()
+    );
     return idx >= 0 ? `Colaborador ${idx + 1}` : null;
   };
   useEffect(() => {
-    const opts = (collaborators && collaborators.length > 0 ? collaborators : beneficiariesList.map((a) => String(a)));
-    if (!withdrawToAddr || !opts.includes(withdrawToAddr)) setWithdrawToAddr(opts[0] ?? null);
+    const opts =
+      collaborators && collaborators.length > 0
+        ? collaborators
+        : beneficiariesList.map((a) => String(a));
+    if (!withdrawToAddr || !opts.includes(withdrawToAddr))
+      setWithdrawToAddr(opts[0] ?? null);
   }, [collaborators, beneficiariesList]);
 
   const deposit = async () => {
     setLoading("deposit");
     try {
-      const v = BigInt(ethersUtils.parseUnits((amount || "0").replace(/,/g, "."), 18).toString());
+      const v = BigInt(
+        ethersUtils
+          .parseUnits((amount || "0").replace(/,/g, "."), 18)
+          .toString()
+      );
+      if (!canWithdraw) throw new Error("El retiro solo es posible al finalizar el tiempo del fondo");
       if (isCeloNet) {
         await approveCCOP(v);
         await depositToken(fundId, v);
-      }
-      else await depositNative(fundId, v);
+      } else await depositNative(fundId, v);
       setAmount("");
       refresh?.();
     } finally {
@@ -58,9 +87,20 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
   const stake = async () => {
     setLoading("stake");
     try {
-      const v = BigInt(ethersUtils.parseUnits((amount || "0").replace(/,/g, "."), 18).toString());
-      if (v > detail.balance) throw new Error("El monto stakeado no puede ser mayor al monto del fondo");
-      await stakeASTR(fundId, v);
+      const v = BigInt(
+        ethersUtils
+          .parseUnits((amount || "0").replace(/,/g, "."), 18)
+          .toString()
+      );
+      if (isCeloNet) {
+        await stakeCelo(v);
+      } else {
+        if (v > detail.balance)
+          throw new Error(
+            "El monto stakeado no puede ser mayor al monto del fondo"
+          );
+        await stakeASTR(fundId, v);
+      }
       setAmount("");
       refresh?.();
     } finally {
@@ -71,10 +111,21 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
   const withdraw = async () => {
     setLoading("withdraw");
     try {
-      if (!canWithdraw) throw new Error("El retiro solo es posible al finalizar el tiempo del fondo");
-      const v = BigInt(ethersUtils.parseUnits((amount || "0").replace(/,/g, "."), 18).toString());
-      if (!withdrawToAddr) throw new Error("Selecciona una wallet de retiro");
-      await withdrawToBeneficiary(fundId, v, withdrawToAddr as any);
+      const v = BigInt(
+        ethersUtils
+          .parseUnits((amount || "0").replace(/,/g, "."), 18)
+          .toString()
+      );
+      if (isCeloNet) {
+        await unstakeCelo(v);
+      } else {
+        if (!canWithdraw)
+          throw new Error(
+            "El retiro solo es posible al finalizar el tiempo del fondo"
+          );
+        if (!withdrawToAddr) throw new Error("Selecciona una wallet de retiro");
+        await withdrawToBeneficiary(fundId, v, withdrawToAddr as any);
+      }
       setAmount("");
       refresh?.();
     } finally {
@@ -82,8 +133,10 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
     }
   };
 
-  const balanceDisplay = (detail as any)?.balanceStr ?? String(detail?.balance ?? 0n);
-  const stakeDisplay = (detail as any)?.stakedBalanceStr ?? String(detail?.stakedBalance ?? 0n);
+  const balanceDisplay =
+    (detail as any)?.balanceStr ?? String(detail?.balance ?? 0n);
+  const stakeDisplay =
+    (detail as any)?.stakedBalanceStr ?? String(detail?.stakedBalance ?? 0n);
   const formatTs = (ts?: unknown) => {
     let seconds = 0;
     if (typeof ts === "bigint") seconds = Number(ts);
@@ -91,14 +144,25 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
     else if (typeof ts === "string") {
       const s = ts.trim();
       if (s) {
-        try { seconds = Number(BigInt(s)); } catch { const n = Number(s); seconds = Number.isFinite(n) ? n : 0; }
+        try {
+          seconds = Number(BigInt(s));
+        } catch {
+          const n = Number(s);
+          seconds = Number.isFinite(n) ? n : 0;
+        }
       }
     }
     if (seconds <= 0) return "-";
     const d = new Date(seconds * 1000);
     return isNaN(d.getTime())
       ? "-"
-      : d.toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      : d.toLocaleString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
   };
   const startStr = formatTs(detail?.startTime);
   const endStr = formatTs(detail?.endTime);
@@ -143,7 +207,10 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
 
       {showModal && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowModal(false)}
+          />
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -242,14 +309,22 @@ export const FundCard = ({ fundId, detail, refresh, collaborators = [] }: FundCa
                     onClick={deposit}
                     disabled={loading !== null}
                   >
-                    {loading === "deposit" ? "Depositing..." : "Deposit"}
+                    {loading === "deposit"
+                      ? `Depositing ${currencySymbol}...`
+                      : `Deposit ${currencySymbol}`}
                   </button>
                   <button
                     className="w-full h-10 rounded-md bg-gradient-to-r from-violet-600 to-fuchsia-500 hover:from-violet-700 hover:to-fuchsia-600 text-white font-semibold shadow-glow disabled:opacity-60"
                     onClick={stake}
                     disabled={loading !== null}
                   >
-                    {loading === "stake" ? "Staking..." : "Stake"}
+                    {loading === "stake"
+                      ? isCeloNet
+                        ? "Staking CELO..."
+                        : `Staking ${currencySymbol}...`
+                      : isCeloNet
+                      ? "Stake CELO"
+                      : `Stake ${currencySymbol}`}
                   </button>
                   <button
                     className="w-full h-10 rounded-md bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-700 hover:to-red-700 text-white font-semibold shadow-glow disabled:opacity-60"
@@ -278,16 +353,31 @@ type FundDetailsPanelProps = {
   currencySymbol: string;
 };
 
-const FundDetailsPanel = ({ fundId, detail, startStr, endStr, collaborators = [], currencySymbol }: FundDetailsPanelProps) => {
-  const balanceDisplay = (detail as any)?.balanceStr ?? String(detail?.balance ?? 0n);
-  const stakeDisplay = (detail as any)?.stakedBalanceStr ?? String(detail?.stakedBalance ?? 0n);
+const FundDetailsPanel = ({
+  fundId,
+  detail,
+  startStr,
+  endStr,
+  collaborators = [],
+  currencySymbol,
+}: FundDetailsPanelProps) => {
+  const balanceDisplay =
+    (detail as any)?.balanceStr ?? String(detail?.balance ?? 0n);
+  const stakeDisplay =
+    (detail as any)?.stakedBalanceStr ?? String(detail?.stakedBalance ?? 0n);
   const earns = (detail as any)?.earns ?? 0;
-  const privilegedList = (Array.isArray(detail.privileged) ? detail.privileged : []).filter((a) => String(a) !== ZERO_ADDRESS);
-  const beneficiariesList = (Array.isArray(detail.beneficiaries) ? detail.beneficiaries : []).filter((a) => String(a) !== ZERO_ADDRESS);
+  const privilegedList = (
+    Array.isArray(detail.privileged) ? detail.privileged : []
+  ).filter((a) => String(a) !== ZERO_ADDRESS);
+  const beneficiariesList = (
+    Array.isArray(detail.beneficiaries) ? detail.beneficiaries : []
+  ).filter((a) => String(a) !== ZERO_ADDRESS);
   const labelForAddr = (addr: unknown) => {
     const a = String(addr || "");
     if (!a) return null;
-    const idx = collaborators.findIndex((x) => x.toLowerCase() === a.toLowerCase());
+    const idx = collaborators.findIndex(
+      (x) => x.toLowerCase() === a.toLowerCase()
+    );
     return idx >= 0 ? `Colaborador ${idx + 1}` : null;
   };
 

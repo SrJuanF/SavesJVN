@@ -80,7 +80,7 @@ export function useSaves(){
       if (!userFundsQuery?.data || userFundsQuery?.data.length === 0) return;
       // Imprimir detalles disponibles para los ids actuales
       if (userFundsDetailsData && userFundsDetailsData.length > 0) {
-        console.log("Detalles de fondos del usuario", { chainId, userAddress, fundIds: userFundsQuery?.data, details: userFundsDetailsData });
+        //console.log("Detalles de fondos del usuario", { chainId, userAddress, fundIds: userFundsQuery?.data, details: userFundsDetailsData });
       }
     }, [contractEnabled, chainId, userAddress, userFundsQuery?.data, userFundsDetailsData]);
 

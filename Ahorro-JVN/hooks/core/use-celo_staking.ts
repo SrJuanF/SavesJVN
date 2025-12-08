@@ -4,7 +4,7 @@ import { usePublicClient } from "wagmi";
 import { useEffect, useState } from "react";
 import type { Address, Hex } from "viem";
 import { getAddress } from "viem";
-import ethers from "ethers";
+import { utils as ethersUtils } from "ethers";
 import {
   ELECTION_GROUP_MAINNET,
   getCoreAddresses,
@@ -46,6 +46,33 @@ function eqAddress(a: Address, b: Address) {
 export function useCeloStaking() {
   const { chainId, userAddress, authenticated } = useAuth();
   const publicClient = usePublicClient();
+  const isCeloNet = chainId === 42220 || chainId === 11142220;
+  if (!isCeloNet) {
+    return {
+      state: {
+        groups: [],
+        addressToGroup: {},
+        totalLocked: 0n,
+        totalVotes: 0n,
+      },
+      Errors: null,
+      userBalance: {
+        locked: "0",
+        unlocking: "0",
+        staked: "0",
+        withdrawed: "0",
+      },
+      epochNumber: undefined,
+      unlockingPeriod: undefined,
+      stake: async (_amount: bigint) => {
+        throw new Error("Celo staking not available on current network");
+      },
+      unstake: async (_amount: bigint) => {
+        throw new Error("Celo staking not available on current network");
+      },
+      txConfirmation: null,
+    };
+  }
   const { lockedGold, election, validators } = getCoreAddresses(chainId);
   // State Variables
   const [state, setState] = useState<{
@@ -53,44 +80,122 @@ export function useCeloStaking() {
     addressToGroup: GroupMap;
     totalLocked: bigint;
     totalVotes: bigint;
-  }>({
-    groups: [],
-    addressToGroup: {},
-    totalLocked: 0n,
-    totalVotes: 0n,
-  });
+  } | null>(null);
   const [userBalance, setUserBalance] = useState<{
     locked: string;
     unlocking: string;
     staked: string;
     withdrawed: string;
-  }>({
-    locked: "0",
-    unlocking: "0",
-    staked: "0",
-    withdrawed: "0",
-  });
+  } | null>(null);
+  const [TargetGroup, setTargetGroup] = useState<Address | null>(null);
   const [Errors, setErrors] = useState<string | null>(null);
 
   // Fetch Validators Data
-  const fetchValidatorDetails = async (addresses: Address[]) => {
-    if (!addresses || addresses.length === 0) return [];
-    const validatorDetailsRaw = await Promise.all(
-      addresses.map(async (addr) => Validators_getValidator(validators, addr))
-    );
-    console.log("Validators Length", validatorDetailsRaw.length);
-    return validatorDetailsRaw.map((d, i) => {
-      if (!d.data) throw new Error(`Validator details missing for index ${i}`);
-      const result = d.data;
-      return {
-        ecdsaPublicKey: result.ecdsaPublicKey,
-        blsPublicKey: result.blsPublicKey,
-        affiliation: result.affiliation,
-        score: result.score,
-        signer: result.signer,
-      };
-    });
-  };
+  const registeredValidators = Validators_getRegisteredValidators(
+    validators,
+    authenticated
+  );
+  const validatorsReady = Boolean(isCeloNet && validators && !registeredValidators?.isPending && Array.isArray(registeredValidators?.data));
+  const validatorsIds: Address[] = validatorsReady ? ((registeredValidators?.data as Address[]) ?? []) : [];
+  const fixedIds = Array.from({ length: 200 }, (_, i) => validatorsIds[i] ?? 0n);
+  const validatorsDetailsAll = fixedIds.map((addr) => Validators_getValidator(validators, addr));
+  const validatorsDetails = validatorsDetailsAll.slice(0, validatorsIds.length);
+  const ValidatorDetailsData = validatorsDetails.map((q) => {
+    const d = (q?.data as any);
+    if (!d) return undefined;
+    if (Array.isArray(d)) {
+      return{
+        affiliation: d[2],
+        signer: d[4],
+      }
+    }
+    return d;
+  }).filter((v) => v !== undefined);
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const addrs = registeredValidators.data;
+      if (!addrs || addrs.length === 0 || !ValidatorDetailsData || ValidatorDetailsData.length === 0) {
+        if (cancelled) return;
+        setState({
+          groups: [],
+          addressToGroup: {},
+          totalLocked: 0n,
+          totalVotes: 0n,
+        });
+        setErrors(null);
+        return;
+      }
+      
+      try {
+        if (addrs.length !== ValidatorDetailsData.length) {
+          setErrors("Validator list size does not match details size");
+          return;
+        }
+        const groups: GroupMap = {};
+        for (let i = 0; i < addrs.length; i++) {
+          const valAddr = addrs[i];
+          const valDetails = ValidatorDetailsData[i];
+          if(!valDetails.affiliation || !valDetails.signer) return;
+          const groupAddr = valDetails.affiliation;
+          if (!groups[groupAddr]) {
+            groups[groupAddr] = {
+              address: groupAddr,
+              members: {},
+              eligible: false,
+              votes: 0n,
+            };
+          }
+          const validator = {
+            address: valAddr,
+            signer: valDetails.signer,
+          };
+          groups[groupAddr].members[valAddr] = validator;
+        }
+        if (groups[ZERO_ADDRESS]) {
+          delete groups[ZERO_ADDRESS];
+        }
+        
+        const { eligibleGroups, groupVotes, totalLocked, totalVotes } =
+          await fetchVotesAndTotalLocked();
+        if (cancelled) return;
+        for (let i = 0; i < eligibleGroups.length; i++) {
+          const groupAddr = eligibleGroups[i];
+          const group = groups[groupAddr];
+          if (group) {
+            group.votes = groupVotes[i];
+            group.eligible = true;
+          }
+        }
+        const groupsWithIneligibleVotes = await setVotesForIneligibleGroups(
+          groups
+        );
+        if (cancelled) return;
+        setState({
+          groups: groupsWithIneligibleVotes,
+          addressToGroup: groups,
+          totalLocked,
+          totalVotes,
+        });
+        const tg = chainId === 11142220 ? groupsWithIneligibleVotes[0].address : ELECTION_GROUP_MAINNET;
+        setTargetGroup(tg);
+        console.log(groupsWithIneligibleVotes)
+      } catch (e: any) {
+        if (cancelled) return;
+        setErrors(e?.message || "Error fetching validator details");
+        setState({
+          groups: [],
+          addressToGroup: {},
+          totalLocked: 0n,
+          totalVotes: 0n,
+        });
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [registeredValidators.data, ValidatorDetailsData]);
   const fetchVotesAndTotalLocked = async () => {
     const votes = await Election_getTotalVotesForEligibleValidatorGroups(
       election
@@ -192,99 +297,6 @@ export function useCeloStaking() {
   };
 
   //Read Functions
-  const registeredValidators = Validators_getRegisteredValidators(
-    validators,
-    authenticated
-  );
-  useEffect(() => {
-    const addrs = registeredValidators.data;
-    if (!addrs || addrs.length === 0) {
-      setState({
-        groups: [],
-        addressToGroup: {},
-        totalLocked: 0n,
-        totalVotes: 0n,
-      });
-      setErrors(null);
-      return;
-    }
-    let cancelled = false;
-    setErrors(null);
-    (async () => {
-      try {
-        const details = await fetchValidatorDetails(addrs as Address[]);
-        if (cancelled) return;
-        if (addrs.length !== details.length) {
-          setErrors("Validator list size does not match details size");
-        }
-        // Procesar lista de validadores para crear el mapa de grupos
-        const groups: GroupMap = {};
-        for (let i = 0; i < addrs.length; i++) {
-          const valAddr = addrs[i];
-          const valDetails = details[i];
-          const groupAddr = valDetails.affiliation;
-          // Crear grupo si no existe aún
-          if (!groups[groupAddr]) {
-            groups[groupAddr] = {
-              address: groupAddr,
-              members: {},
-              eligible: false,
-              votes: 0n,
-            };
-          }
-          // Registrar miembro del grupo
-          const validator = {
-            address: valAddr,
-            signer: valDetails.signer,
-          };
-          groups[groupAddr].members[valAddr] = validator;
-        }
-
-        // Remover el grupo "nulo" de validadores sin afiliación
-        if (groups[ZERO_ADDRESS]) {
-          delete groups[ZERO_ADDRESS];
-        }
-
-        const { eligibleGroups, groupVotes, totalLocked, totalVotes } =
-          await fetchVotesAndTotalLocked();
-
-        // Marcar los grupos elegibles y asignar sus votos
-        for (let i = 0; i < eligibleGroups.length; i++) {
-          const groupAddr = eligibleGroups[i];
-          const group = groups[groupAddr];
-          if (group) {
-            group.votes = groupVotes[i];
-            group.eligible = true;
-          }
-        }
-
-        const groupsWithIneligibleVotes = await setVotesForIneligibleGroups(
-          groups
-        );
-
-        //setState
-        setState({
-          groups: groupsWithIneligibleVotes,
-          addressToGroup: groups,
-          totalLocked,
-          totalVotes,
-        });
-      } catch (e: any) {
-        if (cancelled) return;
-        setErrors(e?.message || "Error fetching validator details");
-        setState({
-          groups: [],
-          addressToGroup: {},
-          totalLocked: 0n,
-          totalVotes: 0n,
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [registeredValidators.data]);
-
   const getBalanceUser = Staking_getBalance(
     userAddress as Address,
     authenticated
@@ -292,11 +304,12 @@ export function useCeloStaking() {
   useEffect(() => {
     if (!getBalanceUser.data) return;
     const result = {
-      locked: ethers.utils.formatEther(getBalanceUser.data.locked),
-      unlocking: ethers.utils.formatEther(getBalanceUser.data.unlocking),
-      staked: ethers.utils.formatEther(getBalanceUser.data.staked),
-      withdrawed: ethers.utils.formatEther(getBalanceUser.data.withdrawed),
+      locked: ethersUtils.formatEther(getBalanceUser.data.locked),
+      unlocking: ethersUtils.formatEther(getBalanceUser.data.unlocking),
+      staked: ethersUtils.formatEther(getBalanceUser.data.staked),
+      withdrawed: ethersUtils.formatEther(getBalanceUser.data.withdrawed),
     };
+    console.log(result);
     setUserBalance(result);
   }, [getBalanceUser.data]);
 
@@ -316,14 +329,16 @@ export function useCeloStaking() {
     status: "success" | "reverted";
   } | null>(null);
 
-  const TargetGroup =
-    chainId === 11142220 ? state.groups[0].address : ELECTION_GROUP_MAINNET;
-
   const stake = async (amount: bigint) => {
     try {
+      console.log("useCeloStaking.stake", { amount });
       if (!publicClient) throw new Error("Public client is undefined");
       if (!userBalance) throw new Error("User balance is undefined");
+      if (!TargetGroup) throw new Error("Target group is undefined");
+      if (!state) throw new Error("State is undefined");
       const locked = BigInt(userBalance.locked);
+      console.log("userBalance.locked", userBalance.locked);
+      console.log("locked", locked);
 
       if (locked < amount) {
         const unlocking = BigInt(userBalance.unlocking);
@@ -362,13 +377,17 @@ export function useCeloStaking() {
       setTxConfirmation({ hash: hashStake, status: receipt.status });
       setErrors(null);
     } catch (e: any) {
+      console.error("useCeloStaking.stake error", e);
       setErrors(e?.message || "Transaction failed");
     }
   };
   const unstake = async (amount: bigint) => {
     try {
+      console.log("useCeloStaking.unstake", { amount });
       if (!publicClient) throw new Error("Public client is undefined");
       if (!userBalance) throw new Error("User balance is undefined");
+      if (!TargetGroup) throw new Error("Target group is undefined");
+      if (!state) throw new Error("State is undefined");
       const staked = BigInt(userBalance.staked);
 
       if (staked < amount) {
@@ -399,6 +418,7 @@ export function useCeloStaking() {
       setTxConfirmation({ hash: hashUnstake, status: receipt.status });
       setErrors(null);
     } catch (e: any) {
+      console.error("useCeloStaking.unstake error", e);
       setErrors(e?.message || "Transaction failed");
     }
   };

@@ -137,7 +137,7 @@ export const useElectionWrites = (election: Address) => {
   };
 };
 
-type ValidatorDetails = {
+export type ValidatorDetails = {
   ecdsaPublicKey: Hex;
   blsPublicKey: Hex;
   affiliation: Address;
