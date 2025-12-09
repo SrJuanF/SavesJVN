@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/hooks";
 import { usePublicClient } from "wagmi";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
 import { getAddress } from "viem";
 import { utils as ethersUtils } from "ethers";
@@ -12,7 +12,6 @@ import {
   LockedGold_unlockingPeriod,
   Election_getTotalVotesForEligibleValidatorGroups,
   Election_getGroupEligibility,
-  Election_getActiveVotesForGroup,
   Election_getEpochNumber,
   Validators_getRegisteredValidators,
   Validators_getValidator,
@@ -20,6 +19,7 @@ import {
   Staking_getBalance,
   useStakingManagerWrites,
 } from "@/hooks/contracts/CeloStaking/celo_staking";
+import { ElectionAbi } from "@/hooks/contracts/CeloStaking/abi";
 
 type Validator = { address: Address; signer: Address };
 type Group = {
@@ -33,11 +33,11 @@ type GroupMap = Record<Address, Group>;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as Address;
 
 function bigIntSum(a: readonly number[] | readonly bigint[]): bigint {
-  return BigInt(
-    a
-      .reduce((acc, val) => acc.plus(val.toString()), new BigNumber(0))
-      .toFixed(0)
-  );
+  let sum = 0n;
+  for (const v of a) {
+    sum += typeof v === "bigint" ? v : BigInt(v);
+  }
+  return sum;
 }
 function eqAddress(a: Address, b: Address) {
   return getAddress(a) === getAddress(b);
@@ -95,48 +95,90 @@ export function useCeloStaking() {
     validators,
     authenticated
   );
-  const validatorsReady = Boolean(isCeloNet && validators && !registeredValidators?.isPending && Array.isArray(registeredValidators?.data));
-  const validatorsIds: Address[] = validatorsReady ? ((registeredValidators?.data as Address[]) ?? []) : [];
-  const fixedIds = Array.from({ length: 200 }, (_, i) => validatorsIds[i] ?? 0n);
-  const validatorsDetailsAll = fixedIds.map((addr) => Validators_getValidator(validators, addr));
+  const validatorsReady = Boolean(
+    isCeloNet &&
+      validators &&
+      !registeredValidators?.isPending &&
+      Array.isArray(registeredValidators?.data)
+  );
+  const validatorsIds: Address[] = validatorsReady
+    ? (registeredValidators?.data as Address[]) ?? []
+    : [];
+  const fixedIds = Array.from(
+    { length: 200 },
+    (_, i) => validatorsIds[i] ?? 0n
+  );
+  const validatorsDetailsAll = fixedIds.map((addr) =>
+    Validators_getValidator(validators, addr)
+  );
   const validatorsDetails = validatorsDetailsAll.slice(0, validatorsIds.length);
-  const ValidatorDetailsData = validatorsDetails.map((q) => {
-    const d = (q?.data as any);
-    if (!d) return undefined;
-    if (Array.isArray(d)) {
-      return{
-        affiliation: d[2],
-        signer: d[4],
+  const ValidatorDetailsData = validatorsDetails
+    .map((q) => {
+      const d = q?.data as any;
+      if (!d) return undefined;
+      if (Array.isArray(d)) {
+        return {
+          affiliation: d[2],
+          signer: d[4],
+        };
       }
-    }
-    return d;
-  }).filter((v) => v !== undefined);
+      return d;
+    })
+    .filter((v) => v !== undefined);
+  const validatorsDetailsReadyCount = validatorsDetails.reduce(
+    (acc, q) => acc + (q?.data ? 1 : 0),
+    0
+  );
+
+  const votesElegibleValidators =
+    Election_getTotalVotesForEligibleValidatorGroups(election);
+  const totalLockedGold = LockedGold_getTotalLockedGold(lockedGold);
+
+  const dataKey = JSON.stringify(
+    [
+      registeredValidators.data ?? [],
+      votesElegibleValidators.data ?? [[], []],
+      totalLockedGold.data?.toString() ?? "0",
+      validatorsDetailsReadyCount,
+    ],
+    (_, v) => (typeof v === "bigint" ? v.toString() : v)
+  );
+  const lastDataKeyRef = useRef<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      const addrs = registeredValidators.data;
-      if (!addrs || addrs.length === 0 || !ValidatorDetailsData || ValidatorDetailsData.length === 0) {
-        if (cancelled) return;
-        setState({
-          groups: [],
-          addressToGroup: {},
-          totalLocked: 0n,
-          totalVotes: 0n,
-        });
-        setErrors(null);
-        return;
-      }
-      
+      if (lastDataKeyRef.current === dataKey) return;
       try {
-        if (addrs.length !== ValidatorDetailsData.length) {
-          setErrors("Validator list size does not match details size");
+        const addrs = registeredValidators.data;
+        if (
+          !addrs ||
+          addrs.length === 0 ||
+          !ValidatorDetailsData ||
+          ValidatorDetailsData.length === 0
+        ) {
+          throw new Error("Error fetching registered validators");
           return;
         }
+        if (addrs.length !== ValidatorDetailsData.length) {
+          throw new Error("Validator list size does not match details size");
+        }
+        if (
+          !Array.isArray(votesElegibleValidators.data) ||
+          votesElegibleValidators.data.length < 2 ||
+          votesElegibleValidators.status !== "success"
+        ) {
+          throw new Error("Error fetching votes for eligible groups");
+        }
+        if (!totalLockedGold.data || totalLockedGold.status !== "success") {
+          throw new Error("Error fetching total locked gold");
+        }
+
         const groups: GroupMap = {};
         for (let i = 0; i < addrs.length; i++) {
           const valAddr = addrs[i];
           const valDetails = ValidatorDetailsData[i];
-          if(!valDetails.affiliation || !valDetails.signer) return;
+          if (!valDetails.affiliation || !valDetails.signer) return;
           const groupAddr = valDetails.affiliation;
           if (!groups[groupAddr]) {
             groups[groupAddr] = {
@@ -155,10 +197,12 @@ export function useCeloStaking() {
         if (groups[ZERO_ADDRESS]) {
           delete groups[ZERO_ADDRESS];
         }
-        
-        const { eligibleGroups, groupVotes, totalLocked, totalVotes } =
-          await fetchVotesAndTotalLocked();
-        if (cancelled) return;
+
+        const eligibleGroups = votesElegibleValidators.data[0];
+        const groupVotes = votesElegibleValidators.data[1];
+        const totalVotes = bigIntSum(groupVotes);
+        const totalLocked = totalLockedGold.data;
+
         for (let i = 0; i < eligibleGroups.length; i++) {
           const groupAddr = eligibleGroups[i];
           const group = groups[groupAddr];
@@ -167,9 +211,11 @@ export function useCeloStaking() {
             group.eligible = true;
           }
         }
+
         const groupsWithIneligibleVotes = await setVotesForIneligibleGroups(
           groups
         );
+
         if (cancelled) return;
         setState({
           groups: groupsWithIneligibleVotes,
@@ -177,9 +223,13 @@ export function useCeloStaking() {
           totalLocked,
           totalVotes,
         });
-        const tg = chainId === 11142220 ? groupsWithIneligibleVotes[0].address : ELECTION_GROUP_MAINNET;
+        const tg =
+          chainId === 11142220
+            ? groupsWithIneligibleVotes[0].address
+            : ELECTION_GROUP_MAINNET;
         setTargetGroup(tg);
-        console.log(groupsWithIneligibleVotes)
+        //console.log(tg);
+        lastDataKeyRef.current = dataKey;
       } catch (e: any) {
         if (cancelled) return;
         setErrors(e?.message || "Error fetching validator details");
@@ -195,30 +245,8 @@ export function useCeloStaking() {
     return () => {
       cancelled = true;
     };
-  }, [registeredValidators.data, ValidatorDetailsData]);
-  const fetchVotesAndTotalLocked = async () => {
-    const votes = await Election_getTotalVotesForEligibleValidatorGroups(
-      election
-    );
-    const Locked = await LockedGold_getTotalLockedGold(lockedGold);
+  }, [dataKey]);
 
-    if (
-      !Array.isArray(votes.data) ||
-      votes.data.length < 2 ||
-      votes.status !== "success"
-    ) {
-      throw new Error("Error fetching votes for eligible groups");
-    }
-    if (!Locked.data || Locked.status !== "success") {
-      throw new Error("Error fetching total locked gold");
-    }
-
-    const eligibleGroups = votes.data[0];
-    const groupVotes = votes.data[1];
-    const totalVotes = bigIntSum(groupVotes);
-    const totalLocked = Locked.data;
-    return { eligibleGroups, groupVotes, totalLocked, totalVotes };
-  };
   const setVotesForIneligibleGroups = async (groups: GroupMap) => {
     const groupsArray = Object.values(groups);
     const ineligibleGroups = groupsArray
@@ -229,12 +257,18 @@ export function useCeloStaking() {
       return groupsArray;
     }
 
-    const votes = await Promise.all(
-      ineligibleGroups.map((group) =>
-        Election_getActiveVotesForGroup(election, group.address)
+    const activeVotesIneligibleGroups = (
+      await Promise.all(
+        ineligibleGroups.map((group) =>
+          publicClient?.readContract({
+            address: election,
+            abi: ElectionAbi,
+            functionName: "getActiveVotesForGroup",
+            args: [group.address],
+          })
+        )
       )
-    );
-    const activeVotesIneligibleGroups = votes.map((entry) => entry.data);
+    ).filter((v) => typeof v === "bigint") as bigint[];
 
     const modifiedGroups = mergeVotesWithGroups(
       ineligibleGroups,
@@ -304,13 +338,13 @@ export function useCeloStaking() {
   useEffect(() => {
     if (!getBalanceUser.data) return;
     const result = {
-      locked: ethersUtils.formatEther(getBalanceUser.data.locked),
-      unlocking: ethersUtils.formatEther(getBalanceUser.data.unlocking),
-      staked: ethersUtils.formatEther(getBalanceUser.data.staked),
-      withdrawed: ethersUtils.formatEther(getBalanceUser.data.withdrawed),
+      locked: getBalanceUser.data.locked.toString(),
+      unlocking: getBalanceUser.data.unlocking.toString(),
+      staked: getBalanceUser.data.staked.toString(),
+      withdrawed: getBalanceUser.data.withdrawed.toString(),
     };
-    console.log(result);
     setUserBalance(result);
+    console.log(result);
   }, [getBalanceUser.data]);
 
   const epochNumber = Election_getEpochNumber(election, authenticated);
@@ -337,7 +371,7 @@ export function useCeloStaking() {
       if (!TargetGroup) throw new Error("Target group is undefined");
       if (!state) throw new Error("State is undefined");
       const locked = BigInt(userBalance.locked);
-      console.log("userBalance.locked", userBalance.locked);
+      //console.log("userBalance.locked", userBalance.locked);
       console.log("locked", locked);
 
       if (locked < amount) {
@@ -353,6 +387,7 @@ export function useCeloStaking() {
         const hash = await fastlock(amountRelock, auxAmount);
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         if (receipt.status === "reverted") {
+          console.error("Fastlock transaction reverted: ", receipt);
           setErrors("Fastlock transaction reverted");
           return;
         }
@@ -371,6 +406,7 @@ export function useCeloStaking() {
         hash: hashStake,
       });
       if (receipt.status === "reverted") {
+        console.error("Stake transaction reverted: ", receipt);
         setErrors("Stake transaction reverted");
         return;
       }

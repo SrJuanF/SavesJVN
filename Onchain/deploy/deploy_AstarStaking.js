@@ -8,7 +8,7 @@ rm -rf Onchain/.git && \
 git rm --cached -rf Onchain && \
 git add Ahorro-JVN && \
 git add Onchain 
-git commit -m "Celo Staking Protocol Frontend - Validators Proccessing Hooks"
+git commit -m "Celo Staking Protocol Frontend - Validators Proccessing Stake"
 git push -u origin main
 */
 
