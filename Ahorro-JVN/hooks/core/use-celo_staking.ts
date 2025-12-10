@@ -14,12 +14,11 @@ import {
   Election_getGroupEligibility,
   Election_getEpochNumber,
   Validators_getRegisteredValidators,
-  Validators_getValidator,
   //useElectionWrites,
   Staking_getBalance,
   useStakingManagerWrites,
 } from "@/hooks/contracts/CeloStaking/celo_staking";
-import { ElectionAbi } from "@/hooks/contracts/CeloStaking/abi";
+import { ElectionAbi, ValidatorsAbi } from "@/hooks/contracts/CeloStaking/abi";
 
 type Validator = { address: Address; signer: Address };
 type Group = {
@@ -47,33 +46,13 @@ export function useCeloStaking() {
   const { chainId, userAddress, authenticated } = useAuth();
   const publicClient = usePublicClient();
   const isCeloNet = chainId === 42220 || chainId === 11142220;
-  if (!isCeloNet) {
-    return {
-      state: {
-        groups: [],
-        addressToGroup: {},
-        totalLocked: 0n,
-        totalVotes: 0n,
-      },
-      Errors: null,
-      userBalance: {
-        locked: "0",
-        unlocking: "0",
-        staked: "0",
-        withdrawed: "0",
-      },
-      epochNumber: undefined,
-      unlockingPeriod: undefined,
-      stake: async (_amount: bigint) => {
-        throw new Error("Celo staking not available on current network");
-      },
-      unstake: async (_amount: bigint) => {
-        throw new Error("Celo staking not available on current network");
-      },
-      txConfirmation: null,
-    };
-  }
-  const { lockedGold, election, validators } = getCoreAddresses(chainId);
+  const { lockedGold, election, validators } = isCeloNet
+    ? getCoreAddresses(chainId)
+    : {
+        lockedGold: ZERO_ADDRESS,
+        election: ZERO_ADDRESS,
+        validators: ZERO_ADDRESS,
+      };
   // State Variables
   const [state, setState] = useState<{
     groups: Group[];
@@ -86,14 +65,14 @@ export function useCeloStaking() {
     unlocking: string;
     staked: string;
     withdrawed: string;
-  } | null>(null);
+  }>();
   const [TargetGroup, setTargetGroup] = useState<Address | null>(null);
   const [Errors, setErrors] = useState<string | null>(null);
 
   // Fetch Validators Data
   const registeredValidators = Validators_getRegisteredValidators(
     validators,
-    authenticated
+    isCeloNet && authenticated
   );
   const validatorsReady = Boolean(
     isCeloNet &&
@@ -104,42 +83,19 @@ export function useCeloStaking() {
   const validatorsIds: Address[] = validatorsReady
     ? (registeredValidators?.data as Address[]) ?? []
     : [];
-  const fixedIds = Array.from(
-    { length: 200 },
-    (_, i) => validatorsIds[i] ?? 0n
-  );
-  const validatorsDetailsAll = fixedIds.map((addr) =>
-    Validators_getValidator(validators, addr)
-  );
-  const validatorsDetails = validatorsDetailsAll.slice(0, validatorsIds.length);
-  const ValidatorDetailsData = validatorsDetails
-    .map((q) => {
-      const d = q?.data as any;
-      if (!d) return undefined;
-      if (Array.isArray(d)) {
-        return {
-          affiliation: d[2],
-          signer: d[4],
-        };
-      }
-      return d;
-    })
-    .filter((v) => v !== undefined);
-  const validatorsDetailsReadyCount = validatorsDetails.reduce(
-    (acc, q) => acc + (q?.data ? 1 : 0),
-    0
-  );
 
   const votesElegibleValidators =
-    Election_getTotalVotesForEligibleValidatorGroups(election);
-  const totalLockedGold = LockedGold_getTotalLockedGold(lockedGold);
+    Election_getTotalVotesForEligibleValidatorGroups(
+      election,
+      isCeloNet && authenticated
+    );
+  const totalLockedGold = LockedGold_getTotalLockedGold(lockedGold, isCeloNet);
 
   const dataKey = JSON.stringify(
     [
       registeredValidators.data ?? [],
       votesElegibleValidators.data ?? [[], []],
       totalLockedGold.data?.toString() ?? "0",
-      validatorsDetailsReadyCount,
     ],
     (_, v) => (typeof v === "bigint" ? v.toString() : v)
   );
@@ -148,20 +104,18 @@ export function useCeloStaking() {
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
+      if (!isCeloNet) return;
       if (lastDataKeyRef.current === dataKey) return;
       try {
+        if (!publicClient) throw new Error("Public client is undefined");
         const addrs = registeredValidators.data;
         if (
           !addrs ||
           addrs.length === 0 ||
-          !ValidatorDetailsData ||
-          ValidatorDetailsData.length === 0
+          !Array.isArray(addrs) ||
+          addrs.length === 0
         ) {
           throw new Error("Error fetching registered validators");
-          return;
-        }
-        if (addrs.length !== ValidatorDetailsData.length) {
-          throw new Error("Validator list size does not match details size");
         }
         if (
           !Array.isArray(votesElegibleValidators.data) ||
@@ -175,11 +129,23 @@ export function useCeloStaking() {
         }
 
         const groups: GroupMap = {};
+        const details = (await Promise.all(
+          (addrs as Address[]).map((addr) =>
+            publicClient.readContract({
+              address: validators,
+              abi: ValidatorsAbi,
+              functionName: "getValidator",
+              args: [addr],
+            })
+          )
+        )) as any[];
         for (let i = 0; i < addrs.length; i++) {
-          const valAddr = addrs[i];
-          const valDetails = ValidatorDetailsData[i];
-          if (!valDetails.affiliation || !valDetails.signer) return;
-          const groupAddr = valDetails.affiliation;
+          const valAddr = addrs[i] as Address;
+          const d = details[i] as any;
+          if (!Array.isArray(d)) continue;
+          const groupAddr = d[2] as Address;
+          const signer = d[4] as Address;
+          if (!groupAddr || !signer) continue;
           if (!groups[groupAddr]) {
             groups[groupAddr] = {
               address: groupAddr,
@@ -188,11 +154,7 @@ export function useCeloStaking() {
               votes: 0n,
             };
           }
-          const validator = {
-            address: valAddr,
-            signer: valDetails.signer,
-          };
-          groups[groupAddr].members[valAddr] = validator;
+          groups[groupAddr].members[valAddr] = { address: valAddr, signer };
         }
         if (groups[ZERO_ADDRESS]) {
           delete groups[ZERO_ADDRESS];
@@ -229,6 +191,7 @@ export function useCeloStaking() {
             : ELECTION_GROUP_MAINNET;
         setTargetGroup(tg);
         //console.log(tg);
+        //console.log(groupsWithIneligibleVotes)
         lastDataKeyRef.current = dataKey;
       } catch (e: any) {
         if (cancelled) return;
@@ -347,8 +310,11 @@ export function useCeloStaking() {
     console.log(result);
   }, [getBalanceUser.data]);
 
-  const epochNumber = Election_getEpochNumber(election, authenticated);
-  const unlockingPeriod = LockedGold_unlockingPeriod(lockedGold, authenticated);
+  const epochNumber = Election_getEpochNumber(
+    election,
+    isCeloNet && authenticated
+  );
+  const unlockingPeriod = LockedGold_unlockingPeriod(lockedGold, isCeloNet);
 
   //Write Functions
   const {
@@ -366,6 +332,8 @@ export function useCeloStaking() {
   const stake = async (amount: bigint) => {
     try {
       console.log("useCeloStaking.stake", { amount });
+      if (!isCeloNet)
+        throw new Error("Celo staking not available on current network");
       if (!publicClient) throw new Error("Public client is undefined");
       if (!userBalance) throw new Error("User balance is undefined");
       if (!TargetGroup) throw new Error("Target group is undefined");
@@ -420,6 +388,8 @@ export function useCeloStaking() {
   const unstake = async (amount: bigint) => {
     try {
       console.log("useCeloStaking.unstake", { amount });
+      if (!isCeloNet)
+        throw new Error("Celo staking not available on current network");
       if (!publicClient) throw new Error("Public client is undefined");
       if (!userBalance) throw new Error("User balance is undefined");
       if (!TargetGroup) throw new Error("Target group is undefined");
